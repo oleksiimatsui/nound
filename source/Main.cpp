@@ -1,11 +1,13 @@
+
+#include <JuceHeader.h>
 #include "MainComponent.h"
 
 //==============================================================================
-class GuiAppApplication final : public juce::JUCEApplication
+class Nound final : public juce::JUCEApplication
 {
 public:
     //==============================================================================
-    GuiAppApplication() {}
+    Nound() {}
 
     // We inject these as compile definitions from the CMakeLists.txt
     // If you've enabled the juce header with `juce_generate_juce_header(<thisTarget>)`
@@ -51,51 +53,43 @@ public:
         This class implements the desktop window that contains an instance of
         our MainComponent class.
     */
-    class MainWindow final : public juce::DocumentWindow
+    class MainWindow    : public juce::DocumentWindow
     {
-    public:
-        explicit MainWindow (juce::String name)
-            : DocumentWindow (name,
-                              juce::Desktop::getInstance().getDefaultLookAndFeel()
-                                                          .findColour (ResizableWindow::backgroundColourId),
-                              DocumentWindow::allButtons)
-        {
-            setUsingNativeTitleBar (true);
-            setContentOwned (new MainComponent(), true);
+        public:
+            MainWindow (juce::String name)
+                : DocumentWindow (name,
+                                  juce::Colours::aliceblue,
+                                  DocumentWindow::allButtons)
+            {
+                setUsingNativeTitleBar (true);
+                setContentOwned (new MainComponent(), true);
 
-           #if JUCE_IOS || JUCE_ANDROID
-            setFullScreen (true);
-           #else
-            setResizable (true, true);
-            centreWithSize (getWidth(), getHeight());
-           #endif
+               #if JUCE_IOS || JUCE_ANDROID
+                setFullScreen (true);
+               #else
+                setResizable (true, true);
+                centreWithSize (getWidth(), getHeight());
+               #endif
 
-            setVisible (true);
-        }
+                setFullScreen(true);
 
-        void closeButtonPressed() override
-        {
-            // This is called when the user tries to close this window. Here, we'll just
-            // ask the app to quit when this happens, but you can change this to do
-            // whatever you need.
-            JUCEApplication::getInstance()->systemRequestedQuit();
-        }
+                setVisible (true);
+                setBackgroundColour(juce::Colour(24, 40, 51));
 
-        /* Note: Be careful if you override any DocumentWindow methods - the base
-           class uses a lot of them, so by overriding you might break its functionality.
-           It's best to do all your work in your content component instead, but if
-           you really have to override any DocumentWindow methods, make sure your
-           subclass also calls the superclass's method.
-        */
+            }
 
-    private:
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
+            void closeButtonPressed() override
+            {
+                JUCEApplication::getInstance()->systemRequestedQuit();
+            }
+
+        private:
+            JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
-
 private:
     std::unique_ptr<MainWindow> mainWindow;
 };
 
 //==============================================================================
 // This macro generates the main() routine that launches the app.
-START_JUCE_APPLICATION (GuiAppApplication)
+START_JUCE_APPLICATION (Nound)
