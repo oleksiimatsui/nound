@@ -1,6 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include <juce_gui_extra/juce_gui_extra.h>
+#include "Theme.h"
 
 class NodeComponent : public juce::Component {
 public:
@@ -8,18 +9,20 @@ public:
     class PinComponent : public juce::Component {
     public:
         PinComponent() {
+                   theme = ThemeProvider::getCurrentTheme();
             setSize(10, 10); // Set the size of the child component
         }
         void paint(juce::Graphics& g)  override {
             juce::Path p;
-            p.addEllipse(0, 0, 10,10);
-            g.setColour(juce::Colours::lightgreen);
+            p.addEllipse(0, 0, theme->pinRadius,theme->pinRadius);
+            g.setColour(juce::Colour(theme->pinColor));
             g.fillPath(p);
         }
         void resized() {
-            setSize(10, 10);
+            setSize(theme->pinRadius,theme->pinRadius);
         }
     private:
+    Theme * theme;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PinComponent)
     };
 
@@ -33,6 +36,7 @@ public:
 
     NodeComponent(juce::Point<int> _position)
     {
+        theme = ThemeProvider::getCurrentTheme();
         auto pin = new PinComponent();
         ordered_inputs.push_back(pin);
         for (auto& p : ordered_inputs) {
@@ -54,7 +58,7 @@ public:
             g.fillAll(juce::Colours::bisque);
         }
         else {
-            g.fillAll(juce::Colours::darkgrey);
+            g.fillAll(juce::Colour(theme->editorColor));
         }
         g.setColour(juce::Colours::black);
         g.drawText(juce::String(std::to_string(position.x) + " " + std::to_string(position.y)), getLocalBounds(), juce::Justification::centred, true);
@@ -68,6 +72,7 @@ public:
     }
 
 private:
+Theme * theme;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NodeComponent);
 };
 
@@ -102,6 +107,8 @@ public:
 
     NodeEditorComponent()
     {
+        ThemeProvider::setDefault();
+        theme = ThemeProvider::getCurrentTheme();
         mouseListener = std::make_unique<NodeListener>(this);
 
         auto node = new NodeComponent(juce::Point<int>(22,22));
@@ -182,12 +189,12 @@ public:
     void paint (juce::Graphics& g) override
     {
 
-        g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId)); 
+        g.fillAll (juce::Colour(theme->editorColor)); 
 
-        g.setColour (juce::Colours::black);
+        g.setColour (juce::Colour(theme->nodeTextColor));
         g.drawRect (getLocalBounds(), 1); 
 
-        g.setColour(juce::Colours::black);
+        g.setColour(juce::Colour(theme->nodeTextColor));
         g.drawText(juce::String(std::to_string(scale) + "%"), getLocalBounds(), juce::Justification::bottomLeft, true);
 
     }
@@ -208,7 +215,7 @@ private:
     NodeComponent* node;
     NodeComponent* node2;
     Wrapper wrapper;
-
+    Theme * theme;
     int scale = 100;
     float size = 10000;
 

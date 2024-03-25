@@ -5,6 +5,7 @@ public:
 Theme(){};
     unsigned int editorColor;
     unsigned int nodeColor;
+    unsigned int nodeTextColor;
     unsigned int nodeHeaderColor;
     unsigned int nodeText;
     unsigned int pinColor;
@@ -18,11 +19,11 @@ public:
         editorColor = 0xFF242424;
         nodeColor = 0xCF4F4F4F;
         nodeHeaderColor = 0xCF656464;
-        nodeText = 1;
         pinColor = 0xFF767676;
         pinRadius = 10;
         pinSpacing = 30;
-};
+        nodeTextColor = 0x4287f5;
+    };
 };
 
 
