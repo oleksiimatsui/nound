@@ -10,12 +10,12 @@ public:
     public:
         PinComponent() {
                    theme = ThemeProvider::getCurrentTheme();
-            setSize(10, 10); // Set the size of the child component
+            setSize(theme->pinRadius, theme->pinRadius); // Set the size of the child component
         }
         void paint(juce::Graphics& g)  override {
             juce::Path p;
             p.addEllipse(0, 0, theme->pinRadius,theme->pinRadius);
-            g.setColour(juce::Colour(theme->pinColor));
+            g.setColour(theme->pinColor);
             g.fillPath(p);
         }
         void resized() {
@@ -54,20 +54,17 @@ public:
     }
 
     void paint(juce::Graphics& g) {
-        if (selected) {
-            g.fillAll(juce::Colours::bisque);
-        }
-        else {
-            g.fillAll(juce::Colour(theme->editorColor));
-        }
-        g.setColour(juce::Colours::black);
+        
+        g.setColour((theme->nodeColor));
+        g.fillRoundedRectangle(getX(), getY(),getWidth(),getHeight(), theme->nodeRounding);
+
+        g.setColour((theme->nodeTextColor));
         g.drawText(juce::String(std::to_string(position.x) + " " + std::to_string(position.y)), getLocalBounds(), juce::Justification::centred, true);
-        g.drawRect(getLocalBounds(), 1);
     }
 
     void resized() override {
         for (auto& p : ordered_inputs) {
-            p->setBounds(0, 0, 100, 100);
+            p->setBounds(0, 0, 100, 300);
         }
     }
 
@@ -189,12 +186,8 @@ public:
     void paint (juce::Graphics& g) override
     {
 
-        g.fillAll (juce::Colour(theme->editorColor)); 
-
-        g.setColour (juce::Colour(theme->nodeTextColor));
-        g.drawRect (getLocalBounds(), 1); 
-
-        g.setColour(juce::Colour(theme->nodeTextColor));
+        g.fillAll((theme->editorColor)); 
+        g.setColour((theme->nodeTextColor));
         g.drawText(juce::String(std::to_string(scale) + "%"), getLocalBounds(), juce::Justification::bottomLeft, true);
 
     }

@@ -156,12 +156,12 @@ public:
 
         stretchableManager.setItemLayout(0,
             -0.05, -0.9,
-            -0.3);
+            -0.1);
         stretchableManager.setItemLayout(1,
             5, 5, 5);
         stretchableManager.setItemLayout(2,
             -0.1, -0.9,
-            -0.7);
+            -0.9);
     }
 
     void resized() override
@@ -217,12 +217,12 @@ public:
 
         stretchableManager.setItemLayout(0,
             -0.01, -0.9,
-            -0.2);
+            -0.1);
         stretchableManager.setItemLayout(1,
             5, 5, 5);
         stretchableManager.setItemLayout(2,
             -0.1, -0.9,
-            -0.8);
+            -0.9);
 
         setSize(500, 500);
     }
