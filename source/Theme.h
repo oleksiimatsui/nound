@@ -1,3 +1,4 @@
+#pragma once
 #include <string>
 
 class Theme {
@@ -12,25 +13,31 @@ Theme(){};
     juce::Colour  nodeInputColor;
     juce::Colour  controlPinColor;
     juce::Colour  soundPinColor;
+    juce::Colour  connectionsColor;
     unsigned int nodeRounding;
-    unsigned int pinRadius;
+    unsigned int pinDiameter;
     unsigned int pinSpacing;
+    int nodeWidth;
+    int connectionsThickness;
 };
 
 class DefaultTheme : public Theme{
 public:
     DefaultTheme(){
         editorColor = juce::Colour::fromRGB(39, 24, 36);
-        nodeColor = juce::Colour::fromRGB(110, 110, 110);
+        nodeColor = juce::Colour::fromRGBA(110, 110, 110, 0.72*255);
         nodeHeaderColor = juce::Colour::fromRGB(47, 72, 119);
         nodeInputColor = juce::Colour::fromRGB(217, 217, 217);
         controlPinColor = juce::Colour::fromRGB(217, 217, 217);
         soundPinColor = juce::Colour::fromRGB(173, 255, 0);
         pinColor =juce::Colour::fromRGB(173, 255, 0);
         nodeTextColor = juce::Colour::fromRGB(255, 255, 255);
-        pinRadius = 10;
-        pinSpacing = 30;
+        connectionsColor = juce::Colour::fromRGB(255,255,255);
+        pinDiameter = 10;
+        pinSpacing = 12;
         nodeRounding = 16;
+        nodeWidth = 100;
+        connectionsThickness = 4;
     };
 private:
 uint32_t hexToUInt32(const std::string& hex) {

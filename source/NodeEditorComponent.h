@@ -2,103 +2,44 @@
 #include <JuceHeader.h>
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "Theme.h"
-
-class NodeComponent : public juce::Component {
-public:
-
-    class PinComponent : public juce::Component {
-    public:
-        PinComponent() {
-                   theme = ThemeProvider::getCurrentTheme();
-            setSize(theme->pinRadius, theme->pinRadius); // Set the size of the child component
-        }
-        void paint(juce::Graphics& g)  override {
-            juce::Path p;
-            p.addEllipse(0, 0, theme->pinRadius,theme->pinRadius);
-            g.setColour(theme->pinColor);
-            g.fillPath(p);
-        }
-        void resized() {
-            setSize(theme->pinRadius,theme->pinRadius);
-        }
-    private:
-    Theme * theme;
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PinComponent)
-    };
-
-    bool selected = false;
-    juce::Point<int> position;
-    std::unordered_map<int, std::unique_ptr<PinComponent>> inputs;
-    std::vector<PinComponent*> ordered_inputs;
-    std::unordered_map<int, std::unique_ptr<PinComponent>> outputs;
-    std::vector<PinComponent*> ordered_outputs;
-
-
-    NodeComponent(juce::Point<int> _position)
-    {
-        theme = ThemeProvider::getCurrentTheme();
-        auto pin = new PinComponent();
-        ordered_inputs.push_back(pin);
-        for (auto& p : ordered_inputs) {
-            addAndMakeVisible(p);
-        }
-        position = _position;
-        setTransform(juce::AffineTransform::translation(_position));
-        setSize(100, 100);
-    }
-
-    ~NodeComponent() override
-    {
-        for (auto& n : ordered_inputs) delete n;
-        inputs.clear();
-    }
-
-    void paint(juce::Graphics& g) {
-        
-        g.setColour((theme->nodeColor));
-        g.fillRoundedRectangle(getX(), getY(),getWidth(),getHeight(), theme->nodeRounding);
-
-        g.setColour((theme->nodeTextColor));
-        g.drawText(juce::String(std::to_string(position.x) + " " + std::to_string(position.y)), getLocalBounds(), juce::Justification::centred, true);
-    }
-
-    void resized() override {
-        for (auto& p : ordered_inputs) {
-            p->setBounds(0, 0, 100, 300);
-        }
-    }
-
-private:
-Theme * theme;
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NodeComponent);
-};
-
-
-class Wrapper : public juce::Component {
-
-};
+#include "NodeGraph.h"
+#include "NodeTypes.h"
+#include "NodeComponent.h"
+#include "PinComponent.h"
+#include "ConnectionComponent.h"
 
 class NodeEditorComponent  : public juce::Component
 {
 public:
-
     struct NodeListener : public MouseListener {
         NodeEditorComponent* view;
         explicit NodeListener(NodeEditorComponent* component) : view(component) {}
         void mouseDrag(const juce::MouseEvent& e) override {
-            auto node = (NodeComponent*)(e.originalComponent);
-            view->nodeMouseDrag(node, e);
+            if (auto node = dynamic_cast<NodeComponent *>(e.originalComponent)) {
+                view->nodeMouseDrag(node, e);
+            } else if (auto pin = dynamic_cast<PinComponent *>(e.originalComponent)) {
+                view->pinMouseDrag(pin, e);
+            }
         }
         void mouseUp(const juce::MouseEvent& e) override {
-            auto node = (NodeComponent*)(e.originalComponent);
-            view->nodeMouseUp(node, e);
+            if (auto node = dynamic_cast<NodeComponent *>(e.originalComponent)) {
+                view->nodeMouseUp(node, e);
+            } else if (auto pin = dynamic_cast<PinComponent *>(e.originalComponent)) {
+                view->pinMouseUp(pin, e);
+            }
+            //else if (auto edge = dynamic_cast<EdgeComponent *>(e.originalComponent)) {
+               // view->edgeMouseUp(edge, e);
+            //}
         }
         void mouseDown(const juce::MouseEvent& e) override {
             auto node = (NodeComponent*)(e.originalComponent);
-            view->nodeMouseDown(node, e);
+            if (auto node = dynamic_cast<NodeComponent *>(e.originalComponent)) {
+                view->nodeMouseDown(node, e);
+            } else if (auto pin = dynamic_cast<PinComponent *>(e.originalComponent)) {
+              //view->pinMouseDown(pin, e);
+            }
         }
     };
-
 
     std::unique_ptr<NodeListener> mouseListener;
 
@@ -107,12 +48,19 @@ public:
         ThemeProvider::setDefault();
         theme = ThemeProvider::getCurrentTheme();
         mouseListener = std::make_unique<NodeListener>(this);
+        connection_preview = std::make_unique<ConnectionPreview>();
 
-        auto node = new NodeComponent(juce::Point<int>(22,22));
-        node_components[0] = node;
-   
+        graph = new Graph();
 
-       // wrapper.addNodes(node_components);
+        graph->addNode(new StartNode());
+        graph->addNode(new SpeakerNode());
+        graph->addNode(new FileReader());
+
+        int i=0;
+        for (auto& n : graph->getNodes()) {
+            node_components[n->id] = new NodeComponent(juce::Point<int>(i*100+10,10), n);
+            i++;
+        }
 
         for (auto& [_, n] : node_components) {
             n->addMouseListener(mouseListener.get(), true);
@@ -123,6 +71,7 @@ public:
     ~NodeEditorComponent() override {
         for (auto& [_, n] : node_components) delete n;
         node_components.clear();
+        delete graph;
     }
 
     void mouseWheelMove(const juce::MouseEvent& mouseEvent, const juce::MouseWheelDetails& wheel) override {
@@ -182,6 +131,19 @@ public:
         node->repaint();
     }
 
+    void pinMouseUp(PinComponent* pin, const juce::MouseEvent& mouseEvent) {
+        
+    }
+    void pinMouseDrag(PinComponent *pin, const juce::MouseEvent &e){
+        auto relativeEvent = e.getEventRelativeTo(this);
+        auto position = relativeEvent.getPosition();
+        connection_preview->startPin = pin;
+        connection_preview->endPin = nullptr;
+        connection_preview->currentEndPosition = position;
+        connection_preview->calculateBounds(getLocalPoint(pin, juce::Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2)), position);
+        addAndMakeVisible(connection_preview.get());
+    }
+
 
     void paint (juce::Graphics& g) override
     {
@@ -207,10 +169,12 @@ private:
     std::unordered_map<int, NodeComponent*> node_components;
     NodeComponent* node;
     NodeComponent* node2;
-    Wrapper wrapper;
     Theme * theme;
     int scale = 100;
     float size = 10000;
+    Graph *  graph;
+
+    std::unique_ptr<ConnectionPreview> connection_preview;
 
     juce::AffineTransform getScaleTranform() {
         return juce::AffineTransform::scale(float(scale)/100.0);
