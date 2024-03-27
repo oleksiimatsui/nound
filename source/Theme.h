@@ -29,10 +29,10 @@ public:
         nodeHeaderColor = juce::Colour::fromRGB(47, 72, 119);
         nodeInputColor = juce::Colour::fromRGB(217, 217, 217);
         controlPinColor = juce::Colour::fromRGB(217, 217, 217);
-        soundPinColor = juce::Colour::fromRGB(173, 255, 0);
+        soundPinColor = juce::Colour::fromRGB(224, 255, 159);
         pinColor =juce::Colour::fromRGB(173, 255, 0);
         nodeTextColor = juce::Colour::fromRGB(255, 255, 255);
-        connectionsColor = juce::Colour::fromRGB(255,255,255);
+        connectionsColor = juce::Colour::fromRGB(224, 255, 159);
         pinDiameter = 10;
         pinSpacing = 12;
         nodeRounding = 16;

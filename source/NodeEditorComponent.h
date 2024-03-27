@@ -39,6 +39,11 @@ public:
               //view->pinMouseDown(pin, e);
             }
         }
+        void mouseEnter(const juce::MouseEvent& e) override{
+            if (auto pin = dynamic_cast<PinComponent *>(e.originalComponent)) {
+                view->pinMouseEnter(pin, e);
+            }
+        }
     };
 
     std::unique_ptr<NodeListener> mouseListener;
@@ -60,12 +65,20 @@ public:
         for (auto& n : graph->getNodes()) {
             node_components[n->id] = new NodeComponent(juce::Point<int>(i*100+10,10), n);
             i++;
-        }
+        };
+        
+        for (auto& c : graph->getConnections()) {
+            PinComponent* pin1 = node_components[c->getNodeFromId()]->outputs[c->getPinFromNumber()];
+            PinComponent* pin2 = node_components[c->getNodeToId()]->outputs[c->getPinToNumber()];
+            connection_components[c->id] = new ConnectionComponent(pin1,pin2);
+        };
 
         for (auto& [_, n] : node_components) {
             n->addMouseListener(mouseListener.get(), true);
             addAndMakeVisible(n);
-        }
+        };
+
+        refreshConnections();
     }
 
     ~NodeEditorComponent() override {
@@ -97,6 +110,7 @@ public:
             n->position = p;
             n->repaint();
         }
+        refreshConnections();
     }
 
     void mouseDrag(const juce::MouseEvent& e) override {
@@ -104,10 +118,10 @@ public:
         if (middleMouseDown) {
             auto offset = e.getOffsetFromDragStart();
             for (auto& [_, n] : node_components) {
-               //n->setTransform(n->scale.followedBy(n->translation.translated(offset)));
                 n->setTransform(getScaleTranform().followedBy(juce::AffineTransform::translation(n->position).translated(offset)));
             }
         }
+        refreshConnections();
     }
     void mouseUp(const juce::MouseEvent& e) override {
         for (auto& [_, n] : node_components) {
@@ -119,8 +133,10 @@ public:
     void nodeMouseDrag(NodeComponent* node, const juce::MouseEvent& mouseEvent) {
         auto offset = mouseEvent.getOffsetFromDragStart();
         node->setTransform(getScaleTranform().followedBy(juce::AffineTransform::translation(node->position).translated(offset * float(scale) / 100.0)));
+        refreshConnections();
     }
     void nodeMouseDown(NodeComponent* node, const juce::MouseEvent& mouseEvent) {
+        node->toFront(false);
         node->selected = true;
         node->repaint();
     }
@@ -131,18 +147,62 @@ public:
         node->repaint();
     }
 
-    void pinMouseUp(PinComponent* pin, const juce::MouseEvent& mouseEvent) {
-        
+    void refreshConnections(){
+        for (auto &[_, e]: connection_components) {
+            auto start = getLocalPoint(e->pin_from, Point<int>(0,0))+Point<int>(theme->pinDiameter/2, theme->pinDiameter/2);
+            auto end = getLocalPoint(e->pin_to, Point<int>(0,0))+Point<int>(theme->pinDiameter/2, theme->pinDiameter/2);
+            e->calculateBounds(start,end);
+            e->repaint();
+            e->toBack();
+        }
     }
+
+    void pinMouseUp(PinComponent* pin, const juce::MouseEvent& mouseEvent) {
+        juce::ignoreUnused(pin);
+        auto relativeEvent = mouseEvent.getEventRelativeTo(this);
+        auto position = relativeEvent.getPosition();
+        connection_preview->currentEndPosition = position;
+        removeChildComponent(connection_preview.get());
+    }
+
     void pinMouseDrag(PinComponent *pin, const juce::MouseEvent &e){
         auto relativeEvent = e.getEventRelativeTo(this);
         auto position = relativeEvent.getPosition();
         connection_preview->startPin = pin;
-        connection_preview->endPin = nullptr;
         connection_preview->currentEndPosition = position;
         connection_preview->calculateBounds(getLocalPoint(pin, juce::Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2)), position);
         addAndMakeVisible(connection_preview.get());
     }
+
+    void pinMouseEnter(PinComponent *pin, const juce::MouseEvent &e) {
+        auto relativeEvent = e.getEventRelativeTo(this);
+        auto position = relativeEvent.getPosition();
+        if (connection_preview->currentEndPosition == position) {
+            addConnection(connection_preview->startPin, pin);
+        }
+    };
+
+    void addConnection(PinComponent *pin1, PinComponent *pin2){
+        Connection * connection;
+        if(pin1->pin->isInput() && !pin2->pin->isInput()){
+            connection = new Connection( (Output*)pin2->pin, (Input*)pin1->pin);   
+        }else if(!pin1->pin->isInput() && pin2->pin->isInput() ){
+            connection = new Connection( (Output*)pin2->pin, (Input*)pin1->pin);   
+        }else{
+            return;
+        }
+        int id = graph->addConnection(connection);
+
+        auto *con = new ConnectionComponent(pin1,pin2);
+        auto start = getLocalPoint(pin1, Point<int>(0,0))+Point<int>(theme->pinDiameter/2, theme->pinDiameter/2);
+        auto end = getLocalPoint(pin2, Point<int>(0,0))+Point<int>(theme->pinDiameter/2, theme->pinDiameter/2);
+        con->toBack();
+        con->calculateBounds(start,end);
+
+        connection_components[id] = con;
+        con->addMouseListener(mouseListener.get(), false);
+        addAndMakeVisible(con);
+    };
 
 
     void paint (juce::Graphics& g) override
@@ -167,6 +227,7 @@ public:
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NodeEditorComponent);
     std::unordered_map<int, NodeComponent*> node_components;
+    std::unordered_map<int, ConnectionComponent*> connection_components;
     NodeComponent* node;
     NodeComponent* node2;
     Theme * theme;

@@ -22,8 +22,8 @@ class PinComponent : public juce::Component {
         void resized() {
             setSize(theme->pinDiameter, theme->pinDiameter);
         }
+    Pin * pin;
     private:
         Theme * theme;
-        Pin * pin;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PinComponent)
     };

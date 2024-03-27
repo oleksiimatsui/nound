@@ -11,10 +11,8 @@ class NodeComponent : public juce::Component {
 public:
     bool selected = false;
     juce::Point<int> position;
-    std::unordered_map<int, std::unique_ptr<PinComponent>> inputs;
-    std::vector<PinComponent*> ordered_inputs;
-    std::unordered_map<int, std::unique_ptr<PinComponent>> outputs;
-    std::vector<PinComponent*> ordered_outputs;
+    std::vector<PinComponent*> inputs;
+    std::vector<PinComponent*> outputs;
 
 
     NodeComponent(juce::Point<int> _position, Node * _node)
@@ -24,16 +22,16 @@ public:
         
         for (auto& p : node->inputs) {
             auto pin = new PinComponent(&p);
-            ordered_inputs.push_back(pin);
+            inputs.push_back(pin);
         }
         for (auto& p : node->outputs) {
             auto pin = new PinComponent(&p);
-            ordered_outputs.push_back(pin);
+            outputs.push_back(pin);
         }
-        for (auto& p : ordered_inputs) {
+        for (auto& p : inputs) {
             addAndMakeVisible(p, 10);
         }
-        for (auto& p : ordered_outputs) {
+        for (auto& p : outputs) {
             addAndMakeVisible(p, 10);
         }
         position = _position;
@@ -46,8 +44,10 @@ public:
 
     ~NodeComponent() override
     {
-        for (auto& n : ordered_inputs) delete n;
+        for (auto& n : inputs) delete n;
         inputs.clear();
+        for (auto& n : outputs) delete n;
+        outputs.clear();
     }
 
     void paint(juce::Graphics& g) {
@@ -75,11 +75,11 @@ public:
 
     void resized() override {
         int margin = header_height;
-        for (auto& p : ordered_outputs) {
+        for (auto& p : outputs) {
             margin += theme->pinSpacing;
             p->setBounds(theme->nodeWidth - theme->pinDiameter, margin, theme->pinDiameter, theme->pinDiameter);
         }
-        for (auto& p : ordered_inputs) {
+        for (auto& p : inputs) {
             margin += theme->pinSpacing;
             p->setBounds(0, margin, theme->pinDiameter, theme->pinDiameter);
         }

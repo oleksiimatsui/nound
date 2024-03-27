@@ -34,6 +34,7 @@ juce_generate_juce_header(${TargetName})
 target_sources(${TargetName}
     PRIVATE
         source/Main.cpp
+        source/NodeGraph.cpp
         )
 
 target_compile_definitions(${TargetName}

@@ -7,7 +7,7 @@ class StartNode : public Node{
 public:
     StartNode():Node(){
         header = "Start";
-        Output output ={"trigger", PinType::Control};
+        Output output(0,"trigger", PinType::Control, this);
         outputs.push_back(output);
     };
 };
@@ -16,7 +16,7 @@ class SpeakerNode : public Node{
 public:
     SpeakerNode():Node(){
         header = "Speaker";
-        Input input ={"numbers", PinType::Signal};
+        Input input(0,"numbers", PinType::Signal, this);
         inputs.push_back(input);
     };
 };
@@ -25,7 +25,7 @@ class FileReader : public Node{
 public:
     FileReader():Node(){
         header = "File Reader";
-        inputs.push_back({"trigger", PinType::Control});
-        outputs.push_back({"numbers", PinType::Signal});
+        inputs.push_back(Input(0,"trigger", PinType::Control, this));
+        outputs.push_back(Output(0,"numbers", PinType::Signal,this));
     };
 };
