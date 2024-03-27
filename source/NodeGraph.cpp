@@ -10,9 +10,17 @@ bool Input::isInput() {
         return true;
     }
 
+void Input::accept(ConnectionFactory * factory){
+    factory->input = this;
+}
+
 bool Output::isInput(){
         return false;
     }
+
+void Output::accept(ConnectionFactory * factory){
+    factory->output = this;
+}
 
 
 Node::Node(){};
@@ -54,10 +62,15 @@ Graph::Graph(){
         nodes.push_back(node);
     };
 
-    int Graph::addConnection(Connection * connection){
+    Connection * Graph::addConnection(Pin * pin1, Pin * pin2){
+        ConnectionFactory factory;
+        factory.addPin(pin1);
+        factory.addPin(pin2);
+        Connection * connection;
+        connection = factory.createConnection();
         connection->id = getId();
         connections.push_back(connection);
-        return id;
+        return connection;
     };
 
     int Graph::getId(){

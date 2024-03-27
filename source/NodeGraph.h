@@ -1,11 +1,13 @@
 #pragma once
 #include "string"
 #include "vector"
+#include <stdexcept>
 
 enum PinType{
     Signal, Control
 };
 class Node;
+class ConnectionFactory;
 class Pin{
 public:
     Pin(int _number, std::string _name, PinType _type, Node *_node);
@@ -14,16 +16,19 @@ public:
     Node* node;
     int number;
     virtual bool isInput() = 0;
+    virtual void accept(ConnectionFactory * factory) = 0;
 };
 class Input: public Pin{
     public:
     Input(int _number, std::string _name, PinType _type, Node *_node):Pin(_number, _name,  _type, _node){};
     bool isInput() override;
+    void accept(ConnectionFactory * factory) override;
 };
 class Output: public Pin{
     public:
     Output(int _number, std::string _name, PinType _type, Node *_node):Pin(_number, _name,  _type, _node){};
     bool isInput() override;
+    void accept(ConnectionFactory * factory) override;
 };
 
 class Internal{
@@ -52,6 +57,30 @@ class Connection{
     Output * pin_from;
     Input * pin_to;
 
+    void setAsPin(Pin * pin);
+
+};
+
+class ConnectionFactory{
+    public:
+    ConnectionFactory(){
+        input = nullptr;
+        output = nullptr;
+    };
+    void addPin(Pin* pin){
+        pin->accept(this);
+    }
+    Connection * createConnection(){
+        if(input == nullptr || output == nullptr){
+            throw std::invalid_argument("Pins are not valid");
+        }
+        if((int)output->isInput() + (int)input->isInput() != 1 || output->type != input->type){
+            throw std::invalid_argument("Pins are not valid");
+        }
+        return new Connection(output,input);
+    }
+    Input* input;
+    Output* output;
 };
 
 
@@ -62,7 +91,7 @@ class Graph{
     std::vector<Connection*> getConnections();
     ~Graph();
     void addNode(Node * node);
-    int addConnection(Connection * connection);
+    Connection * addConnection(Pin * pin1, Pin * pin2);
 
     private:
     std::vector<Node*> nodes;

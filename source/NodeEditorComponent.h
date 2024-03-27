@@ -183,25 +183,23 @@ public:
     };
 
     void addConnection(PinComponent *pin1, PinComponent *pin2){
+
         Connection * connection;
-        if(pin1->pin->isInput() && !pin2->pin->isInput()){
-            connection = new Connection( (Output*)pin2->pin, (Input*)pin1->pin);   
-        }else if(!pin1->pin->isInput() && pin2->pin->isInput() ){
-            connection = new Connection( (Output*)pin2->pin, (Input*)pin1->pin);   
-        }else{
+        try{
+            connection = graph->addConnection(pin2->pin, pin1->pin);
+        }catch(const std::invalid_argument& e){
             return;
         }
-        int id = graph->addConnection(connection);
-
         auto *con = new ConnectionComponent(pin1,pin2);
         auto start = getLocalPoint(pin1, Point<int>(0,0))+Point<int>(theme->pinDiameter/2, theme->pinDiameter/2);
         auto end = getLocalPoint(pin2, Point<int>(0,0))+Point<int>(theme->pinDiameter/2, theme->pinDiameter/2);
         con->toBack();
         con->calculateBounds(start,end);
 
-        connection_components[id] = con;
+        connection_components[connection -> id] = con;
         con->addMouseListener(mouseListener.get(), false);
         addAndMakeVisible(con);
+        con->toBack();
     };
 
 
