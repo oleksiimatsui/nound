@@ -10,7 +10,7 @@ bool Input::isInput() {
         return true;
     }
 
-void Input::accept(ConnectionFactory * factory){
+void Input::accept(ConnectionBuilder * factory){
     factory->input = this;
 }
 
@@ -18,7 +18,7 @@ bool Output::isInput(){
         return false;
     }
 
-void Output::accept(ConnectionFactory * factory){
+void Output::accept(ConnectionBuilder * factory){
     factory->output = this;
 }
 
@@ -44,6 +44,24 @@ int Connection::getNodeFromId(){
 };
 
 
+ConnectionBuilder::ConnectionBuilder(){
+        input = nullptr;
+        output = nullptr;
+    };
+    void ConnectionBuilder::addPin(Pin* pin){
+        pin->accept(this);
+    }
+    Connection * ConnectionBuilder::build(){
+        if(input == nullptr || output == nullptr){
+            throw std::invalid_argument("Pins are not valid");
+        }
+        if((int)output->isInput() + (int)input->isInput() != 1 || output->type != input->type){
+            throw std::invalid_argument("Pins are not valid");
+        }
+        return new Connection(output,input);
+    }
+
+
 Graph::Graph(){
         id = 0;
     };
@@ -63,11 +81,11 @@ Graph::Graph(){
     };
 
     Connection * Graph::addConnection(Pin * pin1, Pin * pin2){
-        ConnectionFactory factory;
+        ConnectionBuilder factory;
         factory.addPin(pin1);
         factory.addPin(pin2);
         Connection * connection;
-        connection = factory.createConnection();
+        connection = factory.build();
         connection->id = getId();
         connections.push_back(connection);
         return connection;

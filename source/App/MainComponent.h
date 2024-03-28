@@ -2,6 +2,7 @@
 #include <JuceHeader.h>
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "NodeEditorComponent.h"
+
 class AppState
 {
 public:
