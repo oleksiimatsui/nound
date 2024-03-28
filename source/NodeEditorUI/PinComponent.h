@@ -22,6 +22,9 @@ class PinComponent : public juce::Component {
         void resized() {
             setSize(theme->pinDiameter, theme->pinDiameter);
         }
+        juce::Colour getColor(){
+            return pin->type==PinType::Control ?  theme->controlPinColor : theme->soundPinColor;
+        }
     Pin * pin;
     private:
         Theme * theme;

@@ -53,6 +53,7 @@ public:
     void paint(juce::Graphics& g) {
         g.setColour((theme->nodeColor));
         g.fillRoundedRectangle(getX()+theme->pinDiameter/2, getY(),theme->nodeWidth-theme->pinDiameter, height, theme->nodeRounding);
+        
         //draw header
         g.setColour((theme->nodeHeaderColor));
         juce::Path p;
@@ -71,6 +72,10 @@ public:
         g.setColour((theme->nodeTextColor));
         g.drawText(node->header, getLocalBounds(), juce::Justification::centredTop, true);
         
+        if(selected){
+            g.setColour((theme->selectedNodeBorderColor));
+            g.drawRoundedRectangle(getX()+theme->pinDiameter/2, getY(),theme->nodeWidth-theme->pinDiameter, height, theme->nodeRounding, theme->selectedNodeBorderWidth);
+        }
     }
 
     void resized() override {

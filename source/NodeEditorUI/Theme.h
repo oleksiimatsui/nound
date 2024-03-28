@@ -15,11 +15,14 @@ Theme(){};
     juce::Colour  controlPinColor;
     juce::Colour  soundPinColor;
     juce::Colour  connectionsColor;
+    juce::Colour selectedConnectionColor;
+    juce::Colour selectedNodeBorderColor;
     unsigned int nodeRounding;
     unsigned int pinDiameter;
     unsigned int pinSpacing;
     int nodeWidth;
     int connectionsThickness;
+    int selectedNodeBorderWidth;
 };
 
 class DefaultTheme : public Theme{
@@ -29,11 +32,13 @@ public:
         nodeColor = juce::Colour::fromRGBA(110, 110, 110, 0.72*255);
         nodeHeaderColor = juce::Colour::fromRGB(47, 72, 119);
         nodeInputColor = juce::Colour::fromRGB(217, 217, 217);
-        controlPinColor = juce::Colour::fromRGB(217, 217, 217);
-        soundPinColor = juce::Colour::fromRGB(224, 255, 159);
+        controlPinColor = juce::Colour::fromRGB(109, 211, 255);
+        soundPinColor = juce::Colour::fromRGB(217, 255, 138);
         pinColor =juce::Colour::fromRGB(173, 255, 0);
         nodeTextColor = juce::Colour::fromRGB(255, 255, 255);
-        connectionsColor = juce::Colour::fromRGB(224, 255, 159);
+        selectedConnectionColor = juce::Colour::fromRGB(255, 255, 255);
+        selectedNodeBorderColor = juce::Colour::fromRGB(255, 255, 255);
+        selectedNodeBorderWidth = 2;
         pinDiameter = 10;
         pinSpacing = 12;
         nodeRounding = 16;

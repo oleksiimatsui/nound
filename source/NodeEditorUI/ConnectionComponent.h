@@ -11,6 +11,7 @@ public:
         theme = ThemeProvider::getCurrentTheme();
         pin_from = pin1;
         pin_to = pin2;
+        selected = false;
     }
     void paint(juce::Graphics &g) override{
         auto w = static_cast<float>(getWidth());
@@ -26,7 +27,7 @@ public:
             path.cubicTo(w*0.5f, 0, w*0.5f, h, w, h);
         }
         auto t = PathStrokeType	(theme->connectionsThickness);
-        g.setColour(theme->connectionsColor);
+        g.setColour(selected ? theme->selectedConnectionColor : pin_from->getColor());
         g.strokePath(path, t);
     };
     void calculateBounds(const juce::Point<int> &start, const juce::Point<int> &end){
@@ -56,6 +57,8 @@ public:
 
     PinComponent* pin_from;
     PinComponent* pin_to;
+
+    bool selected;
 private:
     Theme* theme;
     bool inverted;
@@ -83,7 +86,7 @@ public:
             path.cubicTo(w*0.5f, 0, w*0.5f, h, w, h);
         }
         auto t = PathStrokeType	(theme->connectionsThickness);
-        g.setColour(theme->connectionsColor);
+        g.setColour(startPin->getColor());
         g.strokePath(path, t);
 
     }

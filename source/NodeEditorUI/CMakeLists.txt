@@ -24,6 +24,7 @@ target_sources(${TargetName}
         PinComponent.h
 )
 
+
 target_compile_definitions(${TargetName}
         PRIVATE
         # JUCE_WEB_BROWSER and JUCE_USE_CURL would be on by default, but you might not need them.
