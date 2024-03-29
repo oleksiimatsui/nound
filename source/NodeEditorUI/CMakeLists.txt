@@ -35,7 +35,6 @@ target_compile_definitions(${TargetName}
 
 target_link_libraries(${TargetName}
         PRIVATE
-        # GuiAppData            # If we'd created a binary data target, we'd link to it here
         NodeGraph
         juce::juce_gui_extra
         PUBLIC

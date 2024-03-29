@@ -78,17 +78,17 @@ public:
         graph->addNode(new FileReader());
 
         int i = 0;
-        for (auto &n : graph->getNodes())
+        for (auto &[id, n] : graph->getNodes())
         {
-            node_components[n->id] = new NodeComponent(juce::Point<int>(i * 100 + 10, 10), n);
+            node_components[id] = new NodeComponent(juce::Point<int>(i * 100 + 10, 10), n);
             i++;
         };
 
-        for (auto &c : graph->getConnections())
+        for (auto &[id, c] : graph->getConnections())
         {
             PinComponent *pin1 = node_components[c->getNodeFromId()]->outputs[c->getPinFromNumber()];
             PinComponent *pin2 = node_components[c->getNodeToId()]->outputs[c->getPinToNumber()];
-            connection_components[c->id] = new ConnectionComponent(pin1, pin2);
+            connection_components[id] = new ConnectionComponent(pin1, pin2);
         };
 
         for (auto &[_, n] : node_components)
@@ -184,10 +184,20 @@ public:
         for (auto &id : ids)
         {
             auto c = node_components[id];
-
+            // remove all connections of node
+            auto connections_ids = graph->getConnectionsOfNode(id);
+            for (auto &con_id : connections_ids)
+            {
+                auto c = connection_components[con_id];
+                c->removeMouseListener(mouseListener.get());
+                removeChildComponent(c);
+                connection_components.erase(con_id);
+                graph->deleteConnection(con_id);
+            }
             c->removeMouseListener(mouseListener.get());
             removeChildComponent(c);
             node_components.erase(id);
+            graph->deleteNode(id);
         }
         ids = getSelectedConnections();
         for (auto &id : ids)
@@ -196,6 +206,7 @@ public:
             c->removeMouseListener(mouseListener.get());
             removeChildComponent(c);
             connection_components.erase(id);
+            graph->deleteConnection(id);
         }
     };
 

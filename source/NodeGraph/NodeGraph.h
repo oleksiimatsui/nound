@@ -1,42 +1,49 @@
 #pragma once
+#include <unordered_map>
 #include "string"
 #include "vector"
 #include <stdexcept>
 
-enum PinType{
-    Signal, Control
+enum PinType
+{
+    Signal,
+    Control
 };
 class Node;
 class ConnectionBuilder;
-class Pin{
+class Pin
+{
 public:
     Pin(int _number, std::string _name, PinType _type, Node *_node);
     std::string name;
     PinType type;
-    Node* node;
+    Node *node;
     int number;
     virtual bool isInput() = 0;
-    virtual void accept(ConnectionBuilder * factory) = 0;
+    virtual void accept(ConnectionBuilder *factory) = 0;
 };
-class Input: public Pin{
-    public:
-    Input(int _number, std::string _name, PinType _type, Node *_node):Pin(_number, _name,  _type, _node){};
+class Input : public Pin
+{
+public:
+    Input(int _number, std::string _name, PinType _type, Node *_node) : Pin(_number, _name, _type, _node){};
     bool isInput() override;
-    void accept(ConnectionBuilder * factory) override;
+    void accept(ConnectionBuilder *factory) override;
 };
-class Output: public Pin{
-    public:
-    Output(int _number, std::string _name, PinType _type, Node *_node):Pin(_number, _name,  _type, _node){};
+class Output : public Pin
+{
+public:
+    Output(int _number, std::string _name, PinType _type, Node *_node) : Pin(_number, _name, _type, _node){};
     bool isInput() override;
-    void accept(ConnectionBuilder * factory) override;
+    void accept(ConnectionBuilder *factory) override;
 };
 
-class Internal{
-
+class Internal
+{
 };
 
-class Node{
-    public:
+class Node
+{
+public:
     Node();
     std::string header;
     std::vector<Output> outputs;
@@ -45,45 +52,48 @@ class Node{
     int id;
 };
 
-class Connection{
-    public:
-    Connection(Output * from, Input * to);
+class Connection
+{
+public:
+    Connection(Output *from, Input *to);
     int getNodeFromId();
     int getNodeToId();
     int getPinFromNumber();
     int getPinToNumber();
 
     int id;
-    Output * pin_from;
-    Input * pin_to;
+    Output *pin_from;
+    Input *pin_to;
 
-    void setAsPin(Pin * pin);
-
+    void setAsPin(Pin *pin);
 };
 
-class ConnectionBuilder{
-    public:
+class ConnectionBuilder
+{
+public:
     ConnectionBuilder();
-    void addPin(Pin* pin);
-    Connection * build();
-    Input* input;
-    Output* output;
+    void addPin(Pin *pin);
+    Connection *build();
+    Input *input;
+    Output *output;
 };
 
-
-class Graph{
-    public:
+class Graph
+{
+public:
     Graph();
-    std::vector<Node*> getNodes();
-    std::vector<Connection*> getConnections();
+    std::unordered_map<int, Node *> getNodes();
+    std::unordered_map<int, Connection *> getConnections();
     ~Graph();
-    void addNode(Node * node);
-    Connection * addConnection(Pin * pin1, Pin * pin2);
+    void addNode(Node *node);
+    Connection *addConnection(Pin *pin1, Pin *pin2);
+    std::vector<int> getConnectionsOfNode(int id);
+    void deleteConnection(int id);
+    void deleteNode(int id);
 
-    private:
-    std::vector<Node*> nodes;
-    std::vector<Connection*> connections;
+private:
+    std::unordered_map<int, Node *> nodes;
+    std::unordered_map<int, Connection *> connections;
     int getId();
     int id;
 };
-
