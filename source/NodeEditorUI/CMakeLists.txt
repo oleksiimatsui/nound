@@ -20,7 +20,6 @@ target_sources(${TargetName}
         ConnectionComponent.h
         NodeComponent.h
         NodeEditorComponent.h
-        Theme.h
         PinComponent.h
 )
 

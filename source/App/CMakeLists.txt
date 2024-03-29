@@ -16,7 +16,7 @@ target_sources(App
     PRIVATE
         Main.cpp
         MainComponent.h
-        NodeTypes.h 
+        NodeTypes.h
 )
 
 target_compile_definitions(App
