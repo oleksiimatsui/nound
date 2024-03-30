@@ -78,6 +78,15 @@ public:
     Output *output;
 };
 
+class GraphListener
+{
+public:
+    virtual void NodeAdded(Node *node) = 0;
+    virtual void NodeDeleted(int id) = 0;
+    virtual void ConnectionAdded(Connection *connection) = 0;
+    virtual void ConnectionDeleted(int id) = 0;
+};
+
 class Graph
 {
 public:
@@ -91,9 +100,12 @@ public:
     void deleteConnection(int id);
     void deleteNode(int id);
 
+    void registerListener(GraphListener *listener);
+
 private:
     std::unordered_map<int, Node *> nodes;
     std::unordered_map<int, Connection *> connections;
     int getId();
     int id;
+    std::vector<GraphListener *> listeners;
 };

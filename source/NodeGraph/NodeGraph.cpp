@@ -94,6 +94,10 @@ void Graph::addNode(Node *node)
 {
     node->id = getId();
     nodes[id] = node;
+    for (auto &l : listeners)
+    {
+        l->NodeAdded(node);
+    };
 };
 
 Connection *Graph::addConnection(Pin *pin1, Pin *pin2)
@@ -105,6 +109,10 @@ Connection *Graph::addConnection(Pin *pin1, Pin *pin2)
     connection = factory.build();
     connection->id = getId();
     connections[id] = (connection);
+    for (auto &l : listeners)
+    {
+        l->ConnectionAdded(connection);
+    };
     return connection;
 };
 
@@ -131,8 +139,28 @@ std::vector<int> Graph::getConnectionsOfNode(int node_id)
 void Graph::deleteConnection(int id)
 {
     connections.erase(id);
+    for (auto &l : listeners)
+    {
+        l->ConnectionDeleted(id);
+    };
 }
 void Graph::deleteNode(int id)
 {
+    auto connections_ids = getConnectionsOfNode(id);
+    for (auto &con_id : connections_ids)
+    {
+        Graph::deleteConnection(con_id);
+    };
+
     nodes.erase(id);
+
+    for (auto &l : listeners)
+    {
+        l->NodeDeleted(id);
+    };
+}
+
+void Graph::registerListener(GraphListener *listener)
+{
+    listeners.push_back(listener);
 }

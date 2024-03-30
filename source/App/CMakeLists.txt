@@ -17,6 +17,8 @@ target_sources(App
         Main.cpp
         MainComponent.h
         NodeTypes.h
+        Dropdown.h
+        GraphProvider.h
 )
 
 target_compile_definitions(App

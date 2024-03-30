@@ -11,6 +11,7 @@ namespace App
         Theme(){};
         juce::Colour backgroundColor;
         juce::Colour textColor;
+        juce::Colour dropdownMouseoverBackgroundColor;
     };
 
     class DefaultTheme : public Theme
@@ -20,6 +21,7 @@ namespace App
         {
             backgroundColor = juce::Colour::fromRGB(85, 82, 88);
             textColor = juce::Colour::fromRGB(255, 255, 255);
+            dropdownMouseoverBackgroundColor = juce::Colour::fromRGB(62, 62, 62);
         };
 
     private:

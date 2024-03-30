@@ -4,6 +4,8 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "NodeEditorComponent.h"
 #include "Dropdown.h"
+#include "NodeGraph.h"
+#include "GraphProvider.h"
 
 class AppState
 {
@@ -73,6 +75,11 @@ class NodeEditorWithPanel final : public juce::Component
 public:
     NodeEditorWithPanel()
     {
+        GraphProvider::reset();
+        Graph *graph = GraphProvider::getGraph();
+        editor = new NodeEditorComponent(graph);
+        tree = new DropdownComponent();
+
         addAndMakeVisible(tree);
         addAndMakeVisible(resizerBar);
         addAndMakeVisible(editor);
@@ -87,10 +94,16 @@ public:
                                          -0.9);
     }
 
+    ~NodeEditorWithPanel()
+    {
+        delete editor;
+        delete tree;
+    }
+
     void resized() override
     {
         auto r = getLocalBounds().reduced(4);
-        Component *comps[] = {&tree, &resizerBar, &editor};
+        Component *comps[] = {tree, &resizerBar, editor};
         stretchableManager.layOutComponents(comps, 3,
                                             r.getX(), r.getY(), r.getWidth(), r.getHeight(),
                                             false, true);
@@ -98,8 +111,8 @@ public:
 
 private:
     //   juce::Viewport viewPort;
-    NodeEditorComponent editor;
-    DropdownComponent tree;
+    NodeEditorComponent *editor;
+    DropdownComponent *tree;
     juce::StretchableLayoutManager stretchableManager;
     juce::StretchableLayoutResizerBar resizerBar{&stretchableManager, 1, true};
 };

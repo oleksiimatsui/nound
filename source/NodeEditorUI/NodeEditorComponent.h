@@ -8,9 +8,44 @@
 #include "PinComponent.h"
 #include "ConnectionComponent.h"
 
-class NodeEditorComponent : public juce::Component
+class NodeEditorComponent : public juce::Component, public GraphListener
 {
 public:
+    void NodeAdded(Node *node) override
+    {
+        auto n = new NodeComponent(juce::Point<int>(10, 10), node);
+        node_components[node->id] = n;
+        n->addMouseListener(mouseListener.get(), true);
+        addAndMakeVisible(n);
+    };
+    void NodeDeleted(int id) override
+    {
+        auto c = node_components[id];
+        c->removeMouseListener(mouseListener.get());
+        removeChildComponent(c);
+        node_components.erase(id);
+    };
+    void ConnectionAdded(Connection *c) override
+    {
+        PinComponent *pin1 = node_components[c->getNodeFromId()]->outputs[c->getPinFromNumber()];
+        PinComponent *pin2 = node_components[c->getNodeToId()]->inputs[c->getPinToNumber()];
+        ConnectionComponent *con = new ConnectionComponent(pin1, pin2);
+        auto start = getLocalPoint(pin1, Point<int>(0, 0)) + Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2);
+        auto end = getLocalPoint(pin2, Point<int>(0, 0)) + Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2);
+        con->calculateBounds(start, end);
+        connection_components[c->id] = con;
+        con->addMouseListener(mouseListener.get(), false);
+        addAndMakeVisible(con);
+        con->toBack();
+    };
+    void ConnectionDeleted(int con_id) override
+    {
+        auto c = connection_components[con_id];
+        c->removeMouseListener(mouseListener.get());
+        removeChildComponent(c);
+        connection_components.erase(con_id);
+    }
+
     struct NodeListener : public MouseListener
     {
         NodeEditorComponent *view;
@@ -63,19 +98,16 @@ public:
 
     std::unique_ptr<NodeListener> mouseListener;
 
-    NodeEditorComponent()
+    NodeEditorComponent(Graph *g)
     {
+        g->registerListener(this);
         setWantsKeyboardFocus(true);
         ThemeProvider::setDefault();
         theme = ThemeProvider::getCurrentTheme();
         mouseListener = std::make_unique<NodeListener>(this);
         connection_preview = std::make_unique<ConnectionPreview>();
 
-        graph = new Graph();
-
-        graph->addNode(new StartNode());
-        graph->addNode(new SpeakerNode());
-        graph->addNode(new FileReader());
+        graph = g;
 
         int i = 0;
         for (auto &[id, n] : graph->getNodes())
@@ -183,29 +215,11 @@ public:
         std::vector<int> ids = getSelectedNodes();
         for (auto &id : ids)
         {
-            auto c = node_components[id];
-            // remove all connections of node
-            auto connections_ids = graph->getConnectionsOfNode(id);
-            for (auto &con_id : connections_ids)
-            {
-                auto c = connection_components[con_id];
-                c->removeMouseListener(mouseListener.get());
-                removeChildComponent(c);
-                connection_components.erase(con_id);
-                graph->deleteConnection(con_id);
-            }
-            c->removeMouseListener(mouseListener.get());
-            removeChildComponent(c);
-            node_components.erase(id);
             graph->deleteNode(id);
         }
         ids = getSelectedConnections();
         for (auto &id : ids)
         {
-            auto c = connection_components[id];
-            c->removeMouseListener(mouseListener.get());
-            removeChildComponent(c);
-            connection_components.erase(id);
             graph->deleteConnection(id);
         }
     };
@@ -322,7 +336,6 @@ public:
 
     void addConnection(PinComponent *pin1, PinComponent *pin2)
     {
-
         Connection *connection;
         try
         {
@@ -332,16 +345,6 @@ public:
         {
             return;
         }
-        auto *con = new ConnectionComponent(pin1, pin2);
-        auto start = getLocalPoint(pin1, Point<int>(0, 0)) + Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2);
-        auto end = getLocalPoint(pin2, Point<int>(0, 0)) + Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2);
-        con->toBack();
-        con->calculateBounds(start, end);
-
-        connection_components[connection->id] = con;
-        con->addMouseListener(mouseListener.get(), false);
-        addAndMakeVisible(con);
-        con->toBack();
     };
 
     void paint(juce::Graphics &g) override
