@@ -79,7 +79,9 @@ public:
             App::ThemeProvider::setDefault();
             theme = App::ThemeProvider::getCurrentTheme();
             setBackgroundColour(theme->backgroundColor);
-        }
+
+            getLookAndFeel().setColour(juce::Label::textColourId, theme->textColor);
+                }
 
         void closeButtonPressed() override
         {

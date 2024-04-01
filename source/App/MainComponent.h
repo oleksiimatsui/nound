@@ -3,7 +3,7 @@
 #include <JuceHeader.h>
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "NodeEditorComponent.h"
-#include "Dropdown.h"
+#include "NodeDropdown.h"
 #include "NodeGraph.h"
 #include "GraphProvider.h"
 
@@ -36,7 +36,7 @@ public:
         addAndMakeVisible(&play_button);
         play_button.setButtonText("PLAY");
         play_button.onClick = [this]
-        { toggleAudio(); };
+        { play(); };
         setSize(300, 100);
     }
 
@@ -52,17 +52,16 @@ public:
         play_button.setBounds(0, 0, 100, 50);
     }
 
-    void toggleAudio()
+    void play()
     {
-        bool isPlaying = AppState::getInstance().isPlaying();
-        if (isPlaying)
+        auto graph = GraphProvider::getGraph();
+        for (auto &[id, n] : graph->getNodes())
         {
-            AppState::getInstance().setPlaying(false);
-        }
-        else
-        {
-            AppState::getInstance().setPlaying(true);
-        }
+            if (auto start = dynamic_cast<StartNode *>(n))
+            {
+                // start->triggerAsync();
+            }
+        };
     }
 
 private:

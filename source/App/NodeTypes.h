@@ -15,9 +15,17 @@ public:
     StartNode() : Node()
     {
         header = "Start";
-        Output output(0, "trigger", PinType::Control, this);
-        outputs.push_back(output);
+        registerOutput("trigger", PinType::Control);
     };
+
+private:
+    void trigger(Data *data, Pin *pin) override
+    {
+        for (auto &p : outputs)
+        {
+            // p.trigger(data);
+        }
+    }
 };
 class StartNodeFactory : public NodeFactory
 {
@@ -34,8 +42,7 @@ public:
     SpeakerNode() : Node()
     {
         header = "Speaker";
-        Input input(0, "numbers", PinType::Signal, this);
-        inputs.push_back(input);
+        registerInput("numbers", PinType::Signal);
     };
 };
 class SpeakerNodeFactory : public NodeFactory
@@ -53,8 +60,9 @@ public:
     FileReader() : Node()
     {
         header = "File Reader";
-        inputs.push_back(Input(0, "trigger", PinType::Control, this));
-        outputs.push_back(Output(0, "numbers", PinType::Signal, this));
+        registerInput("trigger", PinType::Control);
+        registerOutput("end", PinType::Control);
+        registerOutput("numbers", PinType::Signal);
     };
 };
 class FileReaderFactory : public NodeFactory

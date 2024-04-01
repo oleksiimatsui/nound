@@ -25,6 +25,21 @@ void Output::accept(ConnectionBuilder *factory)
 
 Node::Node(){};
 
+void Node::triggerAsync(Data *d, Pin *pin) {
+
+};
+void Node::trigger(Data *d, Pin *pin) {
+
+};
+void Node::registerInput(std::string name, PinType type)
+{
+    inputs.push_back(Input(inputs.size(), name, type, this));
+};
+void Node::registerOutput(std::string name, PinType type)
+{
+    outputs.push_back(Output(outputs.size(), name, type, this));
+};
+
 Connection::Connection(Output *from, Input *to)
 {
     pin_from = from;

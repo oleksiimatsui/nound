@@ -56,10 +56,11 @@ struct ItemComponent final : public TreeViewItem
     ItemComponent(Item *i)
         : model(i), mouse_over(false)
     {
-        theme = App::ThemeProvider::getCurrentTheme();
+
         for (auto item : model->childs)
         {
-            addSubItem(new ItemComponent(item));
+            auto item_component = new ItemComponent(item);
+            addSubItem(item_component);
         };
     }
     ~ItemComponent()
@@ -71,8 +72,8 @@ struct ItemComponent final : public TreeViewItem
     }
     void paintItem(Graphics &g, int width, int height) override
     {
-        //  g.fillAll(theme->backgroundColor);
-        g.setColour(theme->textColor);
+        theme = App::ThemeProvider::getCurrentTheme();
+        g.setColour((theme->textColor));
         g.drawText(model->name, 0, 0, width, height, Justification::left);
     }
     void itemClicked(const MouseEvent &) override
@@ -98,14 +99,16 @@ public:
     DropdownComponent()
     {
         graph = GraphProvider::getGraph();
-        Item *item = new Item("Add node", ItemsFactory::getItems());
+        Item *item = new Item("Nodes", ItemsFactory::getItems());
         root = new ItemComponent(item);
         tree.setRootItem(root);
+        tree.setDefaultOpenness(true);
+
+        auto theme = App::ThemeProvider::getCurrentTheme();
+        //  tree.setColour(TreeView::selectedItemBackgroundColourId, theme->dropdownMouseoverBackgroundColor);
         //  tree.setRootItemVisible(false);
         addAndMakeVisible(tree);
         setVisible(true);
-
-        tree.addMouseListener(this, false);
     }
 
     void resized() override

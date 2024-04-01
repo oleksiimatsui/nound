@@ -6,37 +6,67 @@
 #include "NodeTypes.h"
 #include "PinComponent.h"
 
-
-class NodeComponent : public juce::Component {
+class NodeComponent : public juce::Component
+{
 public:
     bool selected = false;
     juce::Point<int> position;
-    std::vector<PinComponent*> inputs;
-    std::vector<PinComponent*> outputs;
+    std::vector<PinComponent *> inputs;
+    std::vector<PinComponent *> outputs;
+    std::vector<Label *> inputNames;
+    std::vector<Label *> outputNames;
 
-
-    NodeComponent(juce::Point<int> _position, Node * _node)
+    NodeComponent(juce::Point<int> _position, Node *_node)
     {
         node = _node;
         theme = ThemeProvider::getCurrentTheme();
-        
-        for (auto& p : node->inputs) {
+        f.setHeight(theme->nodeTextHeight);
+
+        for (auto &p : node->inputs)
+        {
             auto pin = new PinComponent(&p);
             inputs.push_back(pin);
+            auto label = new Label({}, p.name);
+            label->setFont(f);
+            label->setColour(juce::Label::textColourId, theme->nodeTextColor);
+            inputNames.push_back(label);
         }
-        for (auto& p : node->outputs) {
+        for (auto &p : node->outputs)
+        {
             auto pin = new PinComponent(&p);
             outputs.push_back(pin);
+            auto label = new Label({}, p.name);
+            label->setFont(f);
+            label->setColour(juce::Label::textColourId, theme->nodeTextColor);
+            outputNames.push_back(label);
         }
-        for (auto& p : inputs) {
+        for (auto &p : inputNames)
+        {
+            p->setJustificationType(Justification::centredLeft);
+            p->setBounds(80, 80, theme->nodeWidth, 100);
+            p->setInterceptsMouseClicks(false, false);
+            addAndMakeVisible(p);
+        }
+        for (auto &p : outputNames)
+        {
+            p->setJustificationType(Justification::centredRight);
+            p->setBounds(80, 80, theme->nodeWidth, 100);
+            p->setInterceptsMouseClicks(false, false);
+            addAndMakeVisible(p);
+        }
+        for (auto &p : inputs)
+        {
             addAndMakeVisible(p, 10);
         }
-        for (auto& p : outputs) {
+        for (auto &p : outputs)
+        {
             addAndMakeVisible(p, 10);
         }
+
         position = _position;
 
-        height = header_height + theme->pinSpacing*(node->outputs.size()+1)+theme->pinSpacing*(node->inputs.size()+1);
+        spacing = theme->pinDiameter * 2;
+        height = spacing + spacing * (node->outputs.size() + 1) + spacing * (node->inputs.size() + 1);
 
         setTransform(juce::AffineTransform::translation(_position));
         setSize(theme->nodeWidth, height);
@@ -44,58 +74,81 @@ public:
 
     ~NodeComponent() override
     {
-        for (auto& n : inputs) delete n;
+        for (auto &n : inputs)
+            delete n;
         inputs.clear();
-        for (auto& n : outputs) delete n;
+        for (auto &n : outputs)
+            delete n;
         outputs.clear();
+        for (auto &n : outputNames)
+            delete n;
+        outputNames.clear();
+        for (auto &n : inputNames)
+            delete n;
+        inputNames.clear();
     }
 
-    void paint(juce::Graphics& g) {
+    void paint(juce::Graphics &g)
+    {
         g.setColour((theme->nodeColor));
-        g.fillRoundedRectangle(getX()+theme->pinDiameter/2, getY(),theme->nodeWidth-theme->pinDiameter, height, theme->nodeRounding);
-        
-        //draw header
+        g.fillRoundedRectangle(getX() + theme->pinDiameter / 2, getY(), theme->nodeWidth - theme->pinDiameter, height, theme->nodeRounding);
+        auto f = juce::Font();
+        // draw header
         g.setColour((theme->nodeHeaderColor));
         juce::Path p;
-        p.addRoundedRectangle (
-            getX()+theme->pinDiameter/2,
+        p.addRoundedRectangle(
+            getX() + theme->pinDiameter / 2,
             getY(),
-            theme->nodeWidth-theme->pinDiameter,
-            header_height,
+            theme->nodeWidth - theme->pinDiameter,
+            spacing,
             theme->nodeRounding,
             theme->nodeRounding,
             true,
             true,
             false,
             false);
-        g.fillPath (p);
+        g.fillPath(p);
         g.setColour((theme->nodeTextColor));
-        g.drawText(node->header, getLocalBounds(), juce::Justification::centredTop, true);
-        
-        if(selected){
+        g.drawText(node->header, juce::Rectangle<int>(getX() + theme->pinDiameter / 2, getY(), theme->nodeWidth - theme->pinDiameter, spacing), juce::Justification::centred, true);
+
+        if (selected)
+        {
             g.setColour((theme->selectedNodeBorderColor));
-            g.drawRoundedRectangle(getX()+theme->pinDiameter/2, getY(),theme->nodeWidth-theme->pinDiameter, height, theme->nodeRounding, theme->selectedNodeBorderWidth);
+            g.drawRoundedRectangle(getX() + theme->pinDiameter / 2, getY(), theme->nodeWidth - theme->pinDiameter, height, theme->nodeRounding, theme->selectedNodeBorderWidth);
         }
     }
 
-    void resized() override {
-        int margin = header_height;
-        for (auto& p : outputs) {
-            margin += theme->pinSpacing;
-            p->setBounds(theme->nodeWidth - theme->pinDiameter, margin, theme->pinDiameter, theme->pinDiameter);
+    void resized() override
+    {
+        int margin = spacing - spacing * 0.5;
+        for (auto &p : outputs)
+        {
+            margin += spacing;
+            p->setBounds(theme->nodeWidth - theme->pinDiameter, margin - theme->pinDiameter / 2, theme->pinDiameter, theme->pinDiameter);
         }
-        for (auto& p : inputs) {
-            margin += theme->pinSpacing;
-            p->setBounds(0, margin, theme->pinDiameter, theme->pinDiameter);
+        for (auto &p : inputs)
+        {
+            margin += spacing;
+            p->setBounds(0, margin - theme->pinDiameter / 2, theme->pinDiameter, theme->pinDiameter);
         }
-
+        margin = spacing - spacing * 0.5;
+        for (auto &p : outputNames)
+        {
+            margin += spacing;
+            p->setBounds(theme->padding, margin - spacing / 2, theme->nodeWidth - theme->padding * 2, spacing);
+        }
+        for (auto &p : inputNames)
+        {
+            margin += spacing;
+            p->setBounds(theme->padding, margin - spacing / 2, theme->nodeWidth - theme->padding * 2, spacing);
+        }
     }
 
 private:
-    Theme * theme;
-    Node * node;
-    int header_height = 20;
-    int height = 0;
+    juce::Font f;
+    Theme *theme;
+    Node *node;
+    int height;
+    int spacing;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NodeComponent);
 };
-

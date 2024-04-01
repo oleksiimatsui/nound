@@ -1,6 +1,6 @@
 #pragma once
 #include "NodeGraph.h"
-
+#include <memory>
 class GraphProvider
 {
 public:
@@ -20,5 +20,3 @@ public:
 private:
     static std::unique_ptr<Graph> graph;
 };
-
-std::unique_ptr<Graph> GraphProvider::graph = nullptr;

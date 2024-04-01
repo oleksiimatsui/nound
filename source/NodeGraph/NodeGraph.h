@@ -41,6 +41,9 @@ class Internal
 {
 };
 
+#include <any>
+using Data = std::any;
+
 class Node
 {
 public:
@@ -50,6 +53,14 @@ public:
     std::vector<Internal> internals;
     std::vector<Input> inputs;
     int id;
+    void triggerAsync(Data *v, Pin *pin);
+
+private:
+    void virtual trigger(Data *v, Pin *pin);
+
+protected:
+    void registerInput(std::string name, PinType type);
+    void registerOutput(std::string name, PinType type);
 };
 
 class Connection
