@@ -21,6 +21,7 @@ target_sources(${TargetName}
         NodeComponent.h
         NodeEditorComponent.h
         PinComponent.h
+        EditorNode.h
 )
 
 

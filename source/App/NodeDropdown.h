@@ -3,7 +3,7 @@
 #include "vector"
 #include "string"
 #include <JuceHeader.h>
-#include "Theme.h"
+#include "AppTheme.h"
 #include "NodeGraph.h"
 #include "GraphProvider.h"
 #include "NodeTypes.h"
@@ -43,9 +43,10 @@ public:
     {
         std::vector<Item *> i;
 
-        i.push_back(new ItemWithNode("Start", std::vector<Item *>(), new StartNodeFactory()));
+        i.push_back(new Item("Triggers", std::vector<Item *>({new ItemWithNode("Start", std::vector<Item *>(), new StartNodeFactory())})));
+        i.push_back(new Item("Audio source", std::vector<Item *>({new ItemWithNode("File Reader", std::vector<Item *>(), new FileReaderFactory())})));
+
         i.push_back(new ItemWithNode("Speaker", std::vector<Item *>(), new SpeakerNodeFactory()));
-        i.push_back(new ItemWithNode("File Reader", std::vector<Item *>(), new FileReaderFactory()));
 
         return i;
     }

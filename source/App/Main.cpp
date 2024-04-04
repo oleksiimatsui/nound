@@ -1,7 +1,7 @@
 
 #include <JuceHeader.h>
 #include "MainComponent.h"
-#include "Theme.h"
+#include "AppTheme.h"
 
 //==============================================================================
 class Nound final : public juce::JUCEApplication
@@ -81,7 +81,7 @@ public:
             setBackgroundColour(theme->backgroundColor);
 
             getLookAndFeel().setColour(juce::Label::textColourId, theme->textColor);
-                }
+        }
 
         void closeButtonPressed() override
         {

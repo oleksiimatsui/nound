@@ -25,10 +25,11 @@ void Output::accept(ConnectionBuilder *factory)
 
 Node::Node(){};
 
-void Node::triggerAsync(Data *d, Pin *pin) {
-
+void Node::triggerAsync(Data *d, [[maybe_unused]] Input *pin)
+{
+    trigger(d, pin);
 };
-void Node::trigger(Data *d, Pin *pin) {
+void Node::trigger(Data *d, [[maybe_unused]] Input *pin) {
 
 };
 void Node::registerInput(std::string name, PinType type)
@@ -107,12 +108,29 @@ Graph::~Graph()
 };
 void Graph::addNode(Node *node)
 {
+    node->graph = this;
     node->id = getId();
     nodes[id] = node;
     for (auto &l : listeners)
     {
         l->NodeAdded(node);
     };
+};
+
+void Graph::triggerPin(Output *pin, Data *data)
+{
+    for (auto &[id, c] : connections)
+    {
+        if (c->pin_from == pin)
+        {
+            auto node = c->pin_to->node;
+            node->triggerAsync(data, c->pin_to);
+            for (auto &l : listeners)
+            {
+                l->message("connection " + std::to_string(id) + " is triggered");
+            };
+        }
+    }
 };
 
 Connection *Graph::addConnection(Pin *pin1, Pin *pin2)

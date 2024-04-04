@@ -59,7 +59,8 @@ public:
         {
             if (auto start = dynamic_cast<StartNode *>(n))
             {
-                // start->triggerAsync();
+                Data data = 10;
+                start->triggerAsync(&data, nullptr);
             }
         };
     }

@@ -21,8 +21,8 @@ target_sources(App
     MainComponent.h
     NodeTypes.h
     NodeDropdown.h
-
-
+    Components.h
+    AppTheme.h
 )
 
 target_compile_definitions(App

@@ -11,9 +11,13 @@
 class NodeEditorComponent : public juce::Component, public GraphListener
 {
 public:
+    void message(std::string text) override
+    {
+        DBG(text);
+    };
     void NodeAdded(Node *node) override
     {
-        auto n = new NodeComponent(juce::Point<int>(10, 10), node);
+        auto n = new NodeComponent(juce::Point<int>(10, 10), (EditorNode *)node);
         node_components[node->id] = n;
         n->addMouseListener(mouseListener.get(), true);
         addAndMakeVisible(n);
@@ -112,7 +116,7 @@ public:
         int i = 0;
         for (auto &[id, n] : graph->getNodes())
         {
-            node_components[id] = new NodeComponent(juce::Point<int>(i * 100 + 10, 10), n);
+            node_components[id] = new NodeComponent(juce::Point<int>(i * 100 + 10, 10), (EditorNode *)n);
             i++;
         };
 

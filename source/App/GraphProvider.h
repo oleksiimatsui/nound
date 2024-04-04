@@ -12,7 +12,7 @@ public:
     {
         if (graph.get() == nullptr)
         {
-            throw;
+            graph.reset(new Graph);
         }
         return graph.get();
     };

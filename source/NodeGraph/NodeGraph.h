@@ -43,7 +43,7 @@ class Internal
 
 #include <any>
 using Data = std::any;
-
+class Graph;
 class Node
 {
 public:
@@ -53,12 +53,11 @@ public:
     std::vector<Internal> internals;
     std::vector<Input> inputs;
     int id;
-    void triggerAsync(Data *v, Pin *pin);
-
-private:
-    void virtual trigger(Data *v, Pin *pin);
+    Graph *graph;
+    void triggerAsync(Data *v, [[maybe_unused]] Input *pin);
 
 protected:
+    void virtual trigger(Data *v, [[maybe_unused]] Input *pin);
     void registerInput(std::string name, PinType type);
     void registerOutput(std::string name, PinType type);
 };
@@ -96,6 +95,7 @@ public:
     virtual void NodeDeleted(int id) = 0;
     virtual void ConnectionAdded(Connection *connection) = 0;
     virtual void ConnectionDeleted(int id) = 0;
+    virtual void message(std::string text) = 0;
 };
 
 class Graph
@@ -112,6 +112,8 @@ public:
     void deleteNode(int id);
 
     void registerListener(GraphListener *listener);
+
+    void triggerPin(Output *pin, Data *data);
 
 private:
     std::unordered_map<int, Node *> nodes;

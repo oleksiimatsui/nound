@@ -4,6 +4,7 @@
 #include "Theme.h"
 #include "NodeGraph.h"
 #include "NodeTypes.h"
+#include "EditorNode.h"
 #include "PinComponent.h"
 
 class NodeComponent : public juce::Component
@@ -16,7 +17,7 @@ public:
     std::vector<Label *> inputNames;
     std::vector<Label *> outputNames;
 
-    NodeComponent(juce::Point<int> _position, Node *_node)
+    NodeComponent(juce::Point<int> _position, EditorNode *_node)
     {
         node = _node;
         theme = ThemeProvider::getCurrentTheme();
@@ -63,10 +64,14 @@ public:
             addAndMakeVisible(p, 10);
         }
 
+        internal = node->getInternal();
+        // internal->setBounds(80, 80, theme->nodeWidth, 100);
+        addAndMakeVisible(internal);
+
         position = _position;
 
         spacing = theme->pinDiameter * 2;
-        height = spacing + spacing * (node->outputs.size() + 1) + spacing * (node->inputs.size() + 1);
+        height = internal->getHeight() + spacing + spacing * (node->outputs.size() + 1) + spacing * (node->inputs.size() + 1);
 
         setTransform(juce::AffineTransform::translation(_position));
         setSize(theme->nodeWidth, height);
@@ -86,6 +91,7 @@ public:
         for (auto &n : inputNames)
             delete n;
         inputNames.clear();
+        delete internal;
     }
 
     void paint(juce::Graphics &g)
@@ -142,13 +148,17 @@ public:
             margin += spacing;
             p->setBounds(theme->padding, margin - spacing / 2, theme->nodeWidth - theme->padding * 2, spacing);
         }
+
+        margin += spacing;
+        internal->setBounds(theme->padding, margin, theme->nodeWidth - theme->padding * 2, internal->getHeight());
     }
 
 private:
     juce::Font f;
     Theme *theme;
-    Node *node;
+    EditorNode *node;
     int height;
     int spacing;
+    juce::Component *internal;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NodeComponent);
 };
