@@ -1,5 +1,6 @@
 #pragma once
 #include <unordered_map>
+#include <map>
 #include "string"
 #include "vector"
 #include <stdexcept>
@@ -14,31 +15,30 @@ class ConnectionBuilder;
 class Pin
 {
 public:
-    Pin(int _number, std::string _name, PinType _type, Node *_node);
+    Pin(){};
+    Pin(int _key, std::string _name, PinType _type, Node *_node);
     std::string name;
     PinType type;
     Node *node;
-    int number;
+    int key;
     virtual bool isInput() = 0;
     virtual void accept(ConnectionBuilder *factory) = 0;
 };
 class Input : public Pin
 {
 public:
-    Input(int _number, std::string _name, PinType _type, Node *_node) : Pin(_number, _name, _type, _node){};
+    Input(){};
+    Input(int _key, std::string _name, PinType _type, Node *_node);
     bool isInput() override;
     void accept(ConnectionBuilder *factory) override;
 };
 class Output : public Pin
 {
 public:
-    Output(int _number, std::string _name, PinType _type, Node *_node) : Pin(_number, _name, _type, _node){};
+    Output(){};
+    Output(int _key, std::string _name, PinType _type, Node *_node);
     bool isInput() override;
     void accept(ConnectionBuilder *factory) override;
-};
-
-class Internal
-{
 };
 
 #include <any>
@@ -49,17 +49,16 @@ class Node
 public:
     Node();
     std::string header;
-    std::vector<Output> outputs;
-    std::vector<Internal> internals;
-    std::vector<Input> inputs;
+    std::map<int, Output> outputs = {};
+    std::map<int, Input> inputs = {};
     int id;
     Graph *graph;
     void triggerAsync(Data *v, [[maybe_unused]] Input *pin);
 
 protected:
     void virtual trigger(Data *v, [[maybe_unused]] Input *pin);
-    void registerInput(std::string name, PinType type);
-    void registerOutput(std::string name, PinType type);
+    void registerInput(int key, const std::string &name, PinType type);
+    void registerOutput(int key, const std::string &name, PinType type);
 };
 
 class Connection

@@ -16,10 +16,14 @@ public:
 class StartNode : public EditorNode
 {
 public:
+    enum OutputKeys
+    {
+        trigger_
+    };
     StartNode() : EditorNode()
     {
         header = "Start";
-        registerOutput("trigger", PinType::Control);
+        registerOutput(OutputKeys::trigger_, "trigger", PinType::Control);
     };
     juce::Component *getInternal() override
     {
@@ -30,7 +34,7 @@ private:
     void trigger(Data *data, [[maybe_unused]] Input *pin) override
     {
 
-        for (auto &p : outputs)
+        for (auto &[_, p] : outputs)
         {
             GraphProvider::getGraph()->triggerPin(&p, data);
         }
@@ -48,10 +52,14 @@ public:
 class SpeakerNode : public EditorNode
 {
 public:
+    enum InputKeys
+    {
+        numbers_
+    };
     SpeakerNode() : EditorNode()
     {
         header = "Speaker";
-        registerInput("numbers", PinType::Signal);
+        registerInput(InputKeys::numbers_, "numbers", PinType::Signal);
     };
     juce::Component *getInternal() override
     {
@@ -61,11 +69,6 @@ public:
 private:
     void trigger(Data *data, [[maybe_unused]] Input *pin) override
     {
-
-        for (auto &p : outputs)
-        {
-            GraphProvider::getGraph()->triggerPin(&p, data);
-        }
     }
 };
 class SpeakerNodeFactory : public NodeFactory
@@ -80,13 +83,23 @@ public:
 class FileReader : public EditorNode, public FileInputListener
 {
 public:
+    enum InputKeys
+    {
+        trigger_
+    };
+    enum OutputKeys
+    {
+        end_,
+        numbers_
+    };
     FileReader() : EditorNode()
     {
+        currentAudioFile = nullptr;
         internal = new FileInput(this);
         header = "File Reader";
-        registerInput("trigger", PinType::Control);
-        registerOutput("end", PinType::Control);
-        registerOutput("numbers", PinType::Signal);
+        registerInput(InputKeys::trigger_, "trigger", PinType::Control);
+        registerOutput(OutputKeys::end_, "end", PinType::Control);
+        registerOutput(OutputKeys::numbers_, "numbers", PinType::Signal);
     };
     juce::Component *getInternal() override
     {
@@ -110,7 +123,7 @@ private:
     void trigger(Data *data, [[maybe_unused]] Input *pin) override
     {
         source = std::make_any<URL *>(currentAudioFile);
-        graph->triggerPin(&outputs[1], &source);
+        graph->triggerPin(&outputs[OutputKeys::numbers_], &source);
     }
 };
 class FileReaderFactory : public NodeFactory

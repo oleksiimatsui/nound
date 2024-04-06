@@ -1,7 +1,9 @@
 #include "NodeGraph.h"
 
-Pin::Pin(int _number, std::string _name, PinType _type, Node *_node)
-    : number(_number), name(_name), type(_type), node(_node) {}
+Pin::Pin(int _key, std::string _name, PinType _type, Node *_node)
+    : key(_key), name(_name), type(_type), node(_node) {}
+Output::Output(int _key, std::string _name, PinType _type, Node *_node) : Pin(_key, _name, _type, _node){};
+Input::Input(int _key, std::string _name, PinType _type, Node *_node) : Pin(_key, _name, _type, _node){};
 
 bool Input::isInput()
 {
@@ -23,7 +25,11 @@ void Output::accept(ConnectionBuilder *factory)
     factory->output = this;
 }
 
-Node::Node(){};
+Node::Node()
+{
+    graph = nullptr;
+    id = -1;
+};
 
 void Node::triggerAsync(Data *d, [[maybe_unused]] Input *pin)
 {
@@ -32,19 +38,21 @@ void Node::triggerAsync(Data *d, [[maybe_unused]] Input *pin)
 void Node::trigger(Data *d, [[maybe_unused]] Input *pin) {
 
 };
-void Node::registerInput(std::string name, PinType type)
+void Node::registerInput(int key, const std::string &name, PinType type)
 {
-    inputs.push_back(Input(inputs.size(), name, type, this));
+    inputs[key] = Input(key, name, type, this);
+    // inputs.push_back(Input(inputs.size(), name, type, this));
 };
-void Node::registerOutput(std::string name, PinType type)
+void Node::registerOutput(int key, const std::string &name, PinType type)
 {
-    outputs.push_back(Output(outputs.size(), name, type, this));
+    outputs[key] = Output(key, name, type, this);
 };
 
 Connection::Connection(Output *from, Input *to)
 {
     pin_from = from;
     pin_to = to;
+    id = -1;
 };
 int Connection::getNodeFromId()
 {
@@ -56,11 +64,11 @@ int Connection::getNodeToId()
 };
 int Connection::getPinFromNumber()
 {
-    return pin_from->number;
+    return pin_from->key;
 };
 int Connection::getPinToNumber()
 {
-    return pin_to->number;
+    return pin_to->key;
 };
 
 ConnectionBuilder::ConnectionBuilder()

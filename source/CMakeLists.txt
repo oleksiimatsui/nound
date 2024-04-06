@@ -6,4 +6,4 @@ project(Nound VERSION 0.0.1)
 
 add_subdirectory(NodeGraph)
 add_subdirectory(NodeEditorUI)
-add_subdirectory(App)
+add_subdirectory(App) 

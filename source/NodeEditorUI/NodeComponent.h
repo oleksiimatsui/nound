@@ -23,7 +23,7 @@ public:
         theme = ThemeProvider::getCurrentTheme();
         f.setHeight(theme->nodeTextHeight);
 
-        for (auto &p : node->inputs)
+        for (auto &[_, p] : node->inputs)
         {
             auto pin = new PinComponent(&p);
             inputs.push_back(pin);
@@ -32,7 +32,7 @@ public:
             label->setColour(juce::Label::textColourId, theme->nodeTextColor);
             inputNames.push_back(label);
         }
-        for (auto &p : node->outputs)
+        for (auto &[_, p] : node->outputs)
         {
             auto pin = new PinComponent(&p);
             outputs.push_back(pin);
@@ -71,7 +71,7 @@ public:
         position = _position;
 
         spacing = theme->pinDiameter * 2;
-        height = internal->getHeight() + spacing + spacing * (node->outputs.size() + 1) + spacing * (node->inputs.size() + 1);
+        height = internal->getHeight() + spacing + spacing + spacing * (node->outputs.size()) + spacing * (node->inputs.size());
 
         setTransform(juce::AffineTransform::translation(_position));
         setSize(theme->nodeWidth, height);
