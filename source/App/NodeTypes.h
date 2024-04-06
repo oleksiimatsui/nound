@@ -7,12 +7,6 @@
 #include "Theme.h"
 #include "Components.h"
 
-class NodeFactory
-{
-public:
-    virtual EditorNode *create() = 0;
-};
-
 class StartNode : public EditorNode
 {
 public:
@@ -40,14 +34,6 @@ private:
         }
     }
 };
-class StartNodeFactory : public NodeFactory
-{
-public:
-    EditorNode *create() override
-    {
-        return new StartNode;
-    }
-};
 
 class SpeakerNode : public EditorNode
 {
@@ -69,14 +55,6 @@ public:
 private:
     void trigger(Data *data, [[maybe_unused]] Input *pin) override
     {
-    }
-};
-class SpeakerNodeFactory : public NodeFactory
-{
-public:
-    EditorNode *create() override
-    {
-        return new SpeakerNode;
     }
 };
 
@@ -124,13 +102,5 @@ private:
     {
         source = std::make_any<juce::URL *>(currentAudioFile);
         graph->triggerPin(&outputs[OutputKeys::numbers_], &source);
-    }
-};
-class FileReaderFactory : public NodeFactory
-{
-public:
-    EditorNode *create() override
-    {
-        return new FileReader;
     }
 };
