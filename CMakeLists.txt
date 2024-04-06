@@ -23,5 +23,6 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 set_property(GLOBAL PROPERTY USE_FOLDERS YES)
 option(JUCE_ENABLE_MODULE_SOURCE_GROUPS "Enable Module Source Groups" ON)
 
+add_compile_definitions (DONT_SET_USING_JUCE_NAMESPACE=1)
 
 add_subdirectory(source)

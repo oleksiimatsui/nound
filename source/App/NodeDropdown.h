@@ -52,7 +52,7 @@ public:
     }
 };
 
-struct ItemComponent final : public TreeViewItem
+struct ItemComponent final : public juce::TreeViewItem
 {
     ItemComponent(Item *i)
         : model(i), mouse_over(false)
@@ -71,13 +71,13 @@ struct ItemComponent final : public TreeViewItem
     {
         return getNumSubItems() > 0;
     }
-    void paintItem(Graphics &g, int width, int height) override
+    void paintItem(juce::Graphics &g, int width, int height) override
     {
         theme = App::ThemeProvider::getCurrentTheme();
         g.setColour((theme->textColor));
-        g.drawText(model->name, 0, 0, width, height, Justification::left);
+        g.drawText(model->name, 0, 0, width, height, juce::Justification::left);
     }
-    void itemClicked(const MouseEvent &) override
+    void itemClicked(const juce::MouseEvent &) override
     {
         if (mightContainSubItems())
             return;
@@ -94,7 +94,7 @@ private:
     App::Theme *theme;
 };
 
-class DropdownComponent final : public Component
+class DropdownComponent final : public juce::Component
 {
 public:
     DropdownComponent()

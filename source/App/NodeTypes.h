@@ -110,19 +110,19 @@ public:
     {
         delete internal;
     }
-    void setFile(URL *resource) override
+    void setFile(juce::URL *resource) override
     {
         currentAudioFile = resource;
     };
 
 private:
     Data source;
-    URL *currentAudioFile;
+    juce::URL *currentAudioFile;
     FileInput *internal;
 
     void trigger(Data *data, [[maybe_unused]] Input *pin) override
     {
-        source = std::make_any<URL *>(currentAudioFile);
+        source = std::make_any<juce::URL *>(currentAudioFile);
         graph->triggerPin(&outputs[OutputKeys::numbers_], &source);
     }
 };

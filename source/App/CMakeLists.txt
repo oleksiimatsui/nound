@@ -14,7 +14,6 @@ target_include_directories(App
 
 target_sources(App
     PRIVATE
-    
     Main.cpp
     GraphProvider.cpp
     GraphProvider.h

@@ -1,6 +1,5 @@
 #pragma once
 #include <JuceHeader.h>
-#include <juce_gui_extra/juce_gui_extra.h>
 #include "Theme.h"
 #include "NodeGraph.h"
 #include "NodeTypes.h"
@@ -14,8 +13,8 @@ public:
     juce::Point<int> position;
     std::vector<PinComponent *> inputs;
     std::vector<PinComponent *> outputs;
-    std::vector<Label *> inputNames;
-    std::vector<Label *> outputNames;
+    std::vector<juce::Label *> inputNames;
+    std::vector<juce::Label *> outputNames;
 
     NodeComponent(juce::Point<int> _position, EditorNode *_node)
     {
@@ -27,7 +26,7 @@ public:
         {
             auto pin = new PinComponent(&p);
             inputs.push_back(pin);
-            auto label = new Label({}, p.name);
+            auto label = new juce::Label({}, p.name);
             label->setFont(f);
             label->setColour(juce::Label::textColourId, theme->nodeTextColor);
             inputNames.push_back(label);
@@ -36,21 +35,21 @@ public:
         {
             auto pin = new PinComponent(&p);
             outputs.push_back(pin);
-            auto label = new Label({}, p.name);
+            auto label = new juce::Label({}, p.name);
             label->setFont(f);
             label->setColour(juce::Label::textColourId, theme->nodeTextColor);
             outputNames.push_back(label);
         }
         for (auto &p : inputNames)
         {
-            p->setJustificationType(Justification::centredLeft);
+            p->setJustificationType(juce::Justification::centredLeft);
             p->setBounds(80, 80, theme->nodeWidth, 100);
             p->setInterceptsMouseClicks(false, false);
             addAndMakeVisible(p);
         }
         for (auto &p : outputNames)
         {
-            p->setJustificationType(Justification::centredRight);
+            p->setJustificationType(juce::Justification::centredRight);
             p->setBounds(80, 80, theme->nodeWidth, 100);
             p->setInterceptsMouseClicks(false, false);
             addAndMakeVisible(p);

@@ -4,7 +4,7 @@
 class FileInputListener
 {
 public:
-    virtual void setFile(URL *resource) = 0;
+    virtual void setFile(juce::URL *resource) = 0;
 };
 class FileInput : public juce::Component
 {
@@ -15,7 +15,7 @@ public:
         button.onClick = [this]()
         { browseButtonClicked(); };
         button.setColour(juce::Label::textColourId, ThemeProvider::getCurrentTheme()->nodeTextColor);
-        Font f;
+        juce::Font f;
         f.setHeight(ThemeProvider::getCurrentTheme()->nodeTextHeight);
         label.setColour(juce::Label::textColourId, ThemeProvider::getCurrentTheme()->nodeTextColor);
         label.setFont(f);
@@ -38,8 +38,8 @@ public:
     void alignElements()
     {
 
-        FlexBox fb;
-        fb.flexDirection = FlexBox::Direction::column;
+        juce::FlexBox fb;
+        fb.flexDirection = juce::FlexBox::Direction::column;
 
         fb.items.addArray({
             getFlexItem(button, getWidth()),
@@ -60,10 +60,10 @@ public:
     };
     void browseButtonClicked()
     {
-        filechooser.reset(new FileChooser("Choose a file to open...", File::getCurrentWorkingDirectory(),
-                                          "*", true));
+        filechooser.reset(new juce::FileChooser("Choose a file to open...", juce::File::getCurrentWorkingDirectory(),
+                                                "*", true));
 
-        filechooser->launchAsync(FileBrowserComponent::openMode | FileBrowserComponent::canSelectFiles, [this](const FileChooser &fc) mutable
+        filechooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [this](const juce::FileChooser &fc) mutable
                                  {
                                               if (fc.getURLResults().size() > 0)
                                               {
@@ -74,7 +74,7 @@ public:
 
                                               filechooser = nullptr; }, nullptr);
     }
-    void setFile(URL resource, juce::String name)
+    void setFile(juce::URL resource, juce::String name)
     {
         currentAudioFile = std::move(resource);
         listener->setFile(&currentAudioFile);
@@ -85,7 +85,7 @@ private:
     juce::TextButton button{"Browse"};
     juce::Label label{{}, "file is not chosen"};
     FileInputListener *listener;
-    URL currentAudioFile;
+    juce::URL currentAudioFile;
     std::unique_ptr<juce::FileChooser> filechooser = nullptr;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FileInput);
 };

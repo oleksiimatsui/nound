@@ -34,8 +34,8 @@ public:
         PinComponent *pin1 = node_components[c->getNodeFromId()]->outputs[c->getPinFromNumber()];
         PinComponent *pin2 = node_components[c->getNodeToId()]->inputs[c->getPinToNumber()];
         ConnectionComponent *con = new ConnectionComponent(pin1, pin2);
-        auto start = getLocalPoint(pin1, Point<int>(0, 0)) + Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2);
-        auto end = getLocalPoint(pin2, Point<int>(0, 0)) + Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2);
+        auto start = getLocalPoint(pin1, juce::Point<int>(0, 0)) + juce::Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2);
+        auto end = getLocalPoint(pin2, juce::Point<int>(0, 0)) + juce::Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2);
         con->calculateBounds(start, end);
         connection_components[c->id] = con;
         con->addMouseListener(mouseListener.get(), false);
@@ -301,8 +301,8 @@ public:
     {
         for (auto &[_, e] : connection_components)
         {
-            auto start = getLocalPoint(e->pin_from, Point<int>(0, 0)) + Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2);
-            auto end = getLocalPoint(e->pin_to, Point<int>(0, 0)) + Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2);
+            auto start = getLocalPoint(e->pin_from, juce::Point<int>(0, 0)) + juce::Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2);
+            auto end = getLocalPoint(e->pin_to, juce::Point<int>(0, 0)) + juce::Point<int>(theme->pinDiameter / 2, theme->pinDiameter / 2);
             e->calculateBounds(start, end);
             e->repaint();
             e->toBack();
