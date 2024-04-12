@@ -93,5 +93,5 @@
     "*.mm": "cpp",
     "any": "cpp"
   },
-  "cSpell.words": ["juce"]
+  "cSpell.words": ["juce", "Nound"]
 }

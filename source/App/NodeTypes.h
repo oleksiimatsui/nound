@@ -6,6 +6,7 @@
 #include "vector"
 #include "Theme.h"
 #include "Components.h"
+#include "Sources.h"
 
 class StartNode : public EditorNode
 {
@@ -25,7 +26,7 @@ public:
     }
 
 private:
-    void trigger(Data *data, [[maybe_unused]] Input *pin) override
+    void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
 
         for (auto &[_, p] : outputs)
@@ -40,21 +41,29 @@ class SpeakerNode : public EditorNode
 public:
     enum InputKeys
     {
-        numbers_
+        audio_
     };
     SpeakerNode() : EditorNode()
     {
         header = "Speaker";
-        registerInput(InputKeys::numbers_, "numbers", PinType::Signal);
+        registerInput(InputKeys::audio_, "audio", PinType::Signal);
     };
     juce::Component *getInternal() override
     {
-        return new juce::Label("a");
+        return nullptr;
     }
+    SoundOutputSource *source;
 
 private:
-    void trigger(Data *data, [[maybe_unused]] Input *pin) override
+    void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
+        if (pin == &inputs[InputKeys::audio_])
+        {
+            auto f = std::any_cast<FileSource *>(data);
+            source = new SoundOutputSource(*f);
+            source->Start();
+            std::cout << f;
+        }
     }
 };
 
@@ -68,7 +77,7 @@ public:
     enum OutputKeys
     {
         end_,
-        numbers_
+        audio_
     };
     FileReader() : EditorNode()
     {
@@ -77,7 +86,7 @@ public:
         header = "File Reader";
         registerInput(InputKeys::trigger_, "trigger", PinType::Control);
         registerOutput(OutputKeys::end_, "end", PinType::Control);
-        registerOutput(OutputKeys::numbers_, "numbers", PinType::Signal);
+        registerOutput(OutputKeys::audio_, "audio", PinType::Signal);
     };
     juce::Component *getInternal() override
     {
@@ -88,19 +97,61 @@ public:
     {
         delete internal;
     }
-    void setFile(juce::URL *resource) override
+    void setFile(juce::URL *resource, std::string name) override
     {
         currentAudioFile = resource;
+        filesource.setFile(name);
     };
 
 private:
     Data source;
     juce::URL *currentAudioFile;
     FileInput *internal;
+    FileSource filesource;
 
-    void trigger(Data *data, [[maybe_unused]] Input *pin) override
+    void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
-        source = std::make_any<juce::URL *>(currentAudioFile);
-        graph->triggerPin(&outputs[OutputKeys::numbers_], &source);
+        source = &filesource;
+        graph->triggerPin(&outputs[OutputKeys::audio_], source);
+    }
+};
+
+class WaitNode : public EditorNode
+{
+public:
+    enum InputKeys
+    {
+        trigger_in
+    };
+    enum OutputKeys
+    {
+        trigger_out
+    };
+    WaitNode() : EditorNode()
+    {
+        header = "Wait";
+        registerInput(InputKeys::trigger_in, "trigger", PinType::Control);
+        registerOutput(OutputKeys::trigger_out, "trigger", PinType::Control);
+    };
+    juce::Component *getInternal() override
+    {
+        return nullptr;
+    }
+
+    ~WaitNode()
+    {
+        delete internal;
+    }
+
+private:
+    Data source;
+    FileInput *internal;
+    int milliseconds = 5000;
+
+    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    {
+        source = true;
+        juce::Time::waitForMillisecondCounter(milliseconds);
+        graph->triggerPin(&outputs[OutputKeys::trigger_out], source);
     }
 };

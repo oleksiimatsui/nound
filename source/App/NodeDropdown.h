@@ -59,7 +59,7 @@ public:
     {
         std::vector<Item *> i;
 
-        i.push_back(new Item("Triggers", std::vector<Item *>({new ItemWithNode("Start", std::vector<Item *>(), new NodeFactory<StartNode>)})));
+        i.push_back(new Item("Triggers", std::vector<Item *>({new ItemWithNode("Start", std::vector<Item *>(), new NodeFactory<StartNode>), new ItemWithNode("Wait", std::vector<Item *>(), new NodeFactory<WaitNode>)})));
         i.push_back(new Item("Audio source", std::vector<Item *>({new ItemWithNode("File Reader", std::vector<Item *>(), new NodeFactory<FileReader>)})));
 
         i.push_back(new ItemWithNode("Speaker", std::vector<Item *>(), new NodeFactory<SpeakerNode>));

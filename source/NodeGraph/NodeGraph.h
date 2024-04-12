@@ -4,6 +4,7 @@
 #include "string"
 #include "vector"
 #include <stdexcept>
+#include <future>
 
 enum PinType
 {
@@ -53,10 +54,10 @@ public:
     std::map<int, Input> inputs = {};
     int id;
     Graph *graph;
-    void triggerAsync(Data *v, [[maybe_unused]] Input *pin);
+    void triggerAsync(Data &v, [[maybe_unused]] Input *pin);
 
 protected:
-    void virtual trigger(Data *v, [[maybe_unused]] Input *pin);
+    void virtual trigger(Data &v, [[maybe_unused]] Input *pin);
     void registerInput(int key, const std::string &name, PinType type);
     void registerOutput(int key, const std::string &name, PinType type);
 };
@@ -112,7 +113,7 @@ public:
 
     void registerListener(GraphListener *listener);
 
-    void triggerPin(Output *pin, Data *data);
+    void triggerPin(Output *pin, Data &data);
 
 private:
     std::unordered_map<int, Node *> nodes;

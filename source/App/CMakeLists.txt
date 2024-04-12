@@ -14,14 +14,17 @@ target_include_directories(App
 
 target_sources(App
     PRIVATE
-    Main.cpp
-    GraphProvider.cpp
+
     GraphProvider.h
     MainComponent.h
     NodeTypes.h
     NodeDropdown.h
-    Components.h
-    AppTheme.h
+    Components.h 
+
+    AppTheme.cpp
+    NoundAudioProcessor.cpp
+    Main.cpp
+    GraphProvider.cpp
 )
 
 target_compile_definitions(App

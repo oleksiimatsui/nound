@@ -8,7 +8,7 @@ namespace App
     class Theme
     {
     public:
-        Theme(){};
+        Theme();
         juce::Colour backgroundColor;
         juce::Colour textColor;
         juce::Colour dropdownMouseoverBackgroundColor;
@@ -17,12 +17,7 @@ namespace App
     class DefaultTheme : public Theme
     {
     public:
-        DefaultTheme()
-        {
-            backgroundColor = juce::Colour::fromRGB(85, 82, 88);
-            textColor = juce::Colour::fromRGB(255, 255, 255);
-            dropdownMouseoverBackgroundColor = juce::Colour::fromRGB(62, 62, 62);
-        };
+        DefaultTheme();
 
     private:
     };
@@ -30,22 +25,10 @@ namespace App
     static class ThemeProvider
     {
     public:
-        static void setDefault()
-        {
-            currentTheme.reset(new DefaultTheme());
-        }
-        static Theme *getCurrentTheme()
-        {
-            if (currentTheme.get() == nullptr)
-            {
-                currentTheme.reset(new DefaultTheme());
-            }
-            return currentTheme.get();
-        }
+        static void setDefault();
+        static Theme *getCurrentTheme();
 
     private:
         static std::unique_ptr<Theme> currentTheme;
     };
-
-    std::unique_ptr<Theme> ThemeProvider::currentTheme = nullptr;
 }

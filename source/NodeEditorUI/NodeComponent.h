@@ -63,14 +63,18 @@ public:
             addAndMakeVisible(p, 10);
         }
 
-        internal = node->getInternal();
-        // internal->setBounds(80, 80, theme->nodeWidth, 100);
-        addAndMakeVisible(internal);
-
         position = _position;
 
         spacing = theme->pinDiameter * 2;
-        height = internal->getHeight() + spacing + spacing + spacing * (node->outputs.size()) + spacing * (node->inputs.size());
+        height = spacing + spacing + spacing * (node->outputs.size()) + spacing * (node->inputs.size());
+
+        internal = node->getInternal();
+
+        if (internal != nullptr)
+        {
+            height += internal->getHeight();
+            addAndMakeVisible(internal);
+        }
 
         setTransform(juce::AffineTransform::translation(_position));
         setSize(theme->nodeWidth, height);
@@ -148,6 +152,8 @@ public:
             p->setBounds(theme->padding, margin - spacing / 2, theme->nodeWidth - theme->padding * 2, spacing);
         }
 
+        if (internal == nullptr)
+            return;
         margin += spacing;
         internal->setBounds(theme->padding, margin, theme->nodeWidth - theme->padding * 2, internal->getHeight());
     }

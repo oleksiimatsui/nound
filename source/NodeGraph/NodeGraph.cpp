@@ -31,11 +31,17 @@ Node::Node()
     id = -1;
 };
 
-void Node::triggerAsync(Data *d, [[maybe_unused]] Input *pin)
+void Node::triggerAsync(Data &d, [[maybe_unused]] Input *pin)
 {
-    trigger(d, pin);
+    auto f = std::async(
+        std::launch::async,
+        [&](auto d, auto p)
+        { this->trigger(d, p); }, d, pin);
+
+    f.wait();
+    // trigger(d, pin);
 };
-void Node::trigger(Data *d, [[maybe_unused]] Input *pin) {
+void Node::trigger(Data &d, [[maybe_unused]] Input *pin) {
 
 };
 void Node::registerInput(int key, const std::string &name, PinType type)
@@ -125,7 +131,7 @@ void Graph::addNode(Node *node)
     };
 };
 
-void Graph::triggerPin(Output *pin, Data *data)
+void Graph::triggerPin(Output *pin, Data &data)
 {
     for (auto &[id, c] : connections)
     {

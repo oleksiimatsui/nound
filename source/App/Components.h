@@ -4,7 +4,7 @@
 class FileInputListener
 {
 public:
-    virtual void setFile(juce::URL *resource) = 0;
+    virtual void setFile(juce::URL *resource, std::string name) = 0;
 };
 class FileInput : public juce::Component
 {
@@ -77,7 +77,7 @@ public:
     void setFile(juce::URL resource, juce::String name)
     {
         currentAudioFile = std::move(resource);
-        listener->setFile(&currentAudioFile);
+        listener->setFile(&currentAudioFile, name.toStdString());
         label.setText(name, juce::NotificationType::sendNotification);
     }
 

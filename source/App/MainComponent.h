@@ -1,5 +1,6 @@
 #pragma once
 #include "string"
+#include "NoundAudioProcessor.h"
 #include <JuceHeader.h>
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "NodeEditorComponent.h"
@@ -59,8 +60,8 @@ public:
         {
             if (auto start = dynamic_cast<StartNode *>(n))
             {
-                Data data = 10;
-                start->triggerAsync(&data, nullptr);
+                Data data = true;
+                start->triggerAsync(data, nullptr);
             }
         };
     }
@@ -125,22 +126,11 @@ enum TransportState
     Stopping
 };
 
-class MainComponent : public juce::AudioAppComponent
+class MainComponent : public juce::Component
 {
 public:
     MainComponent()
     {
-        if (juce::RuntimePermissions::isRequired(juce::RuntimePermissions::recordAudio) && !juce::RuntimePermissions::isGranted(juce::RuntimePermissions::recordAudio))
-        {
-            juce::RuntimePermissions::request(juce::RuntimePermissions::recordAudio,
-                                              [&](bool granted)
-                                              { setAudioChannels(granted ? 0 : 0, 0); });
-        }
-        else
-        {
-            setAudioChannels(0, 0);
-        }
-
         setTitle("Welcome to nound");
         setDescription("sound node editor");
         setFocusContainerType(FocusContainerType::focusContainer);
@@ -162,32 +152,8 @@ public:
     }
     ~MainComponent() override
     {
-        shutdownAudio();
     }
-    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
-    {
-        random.setSeed(juce::Time::currentTimeMillis());
-    }
-    void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
-    {
-        bool isPlaying = AppState::getInstance().isPlaying();
 
-        /*  if (isPlaying)
-          {
-              for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
-              {
-                  auto* buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
-                  for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
-                      buffer[sample] = random.nextFloat() * 0.25f - 0.125f;
-              }
-          }
-          else {
-              bufferToFill.clearActiveBufferRegion();
-          }*/
-    }
-    void releaseResources() override
-    {
-    }
     void paint(juce::Graphics &g)
     {
     }
