@@ -63,14 +63,6 @@ public:
     void play()
     {
         auto graph = GraphProvider::getGraph();
-        // for (auto &[id, n] : graph->getNodes())
-        // {
-        //     if (auto out = dynamic_cast<SpeakerNode *>(n))
-        //     {
-        //         if (out->source != nullptr)
-        //             out->source->Stop();
-        //     }
-        // };
         for (auto &[id, n] : graph->getNodes())
         {
             if (auto start = dynamic_cast<StartNode *>(n))

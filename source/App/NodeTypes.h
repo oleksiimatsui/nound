@@ -183,7 +183,7 @@ public:
         internal.setTextValueSuffix(""); // [2]
         internal.setValue(0.5);
         internal.addListener(this);
-        internal.setSize(1000, 50);
+        internal.setSize(1000, 20);
         header = "Reverb";
         registerInput(InputKeys::audio_in, "audio", PinType::Signal);
         registerOutput(OutputKeys::audio_out, "audio", PinType::Signal);
@@ -267,12 +267,47 @@ public:
 
         registerOutput(OutputKeys::audio_out, "audio", PinType::Signal);
     };
+    enum Operations
+    {
+        add = 1,
+        substract,
+        multiply,
+        divide
+    };
     juce::Component *getInternal() override
     {
-        return nullptr;
+        c = new juce::ComboBox();
+        c->setSize(1000, 20);
+        c->addItem("Add", Operations::add);
+        c->addItem("Subtract", Operations::substract);
+        c->addItem("Multiply", Operations::multiply);
+        c->addItem("Divide", Operations::divide);
+        c->setItemEnabled(Operations::add, false);
+        c->onChange = [this]
+        { operationChanged(); };
+        return c;
     }
+    void operationChanged()
+    {
+        switch (c->getSelectedId())
+        {
+        case Operations::add:
+            MAsource.state = new MathAudioSource::Add();
+            break;
+        case Operations::substract:
+            MAsource.state = new MathAudioSource::Substract();
+            break;
+        case Operations::multiply:
+            MAsource.state = new MathAudioSource::Multiply();
+            break;
+        case Operations::divide:
+            MAsource.state = new MathAudioSource::Divide();
+            break;
+        }
+    };
 
 private:
+    juce::ComboBox *c;
     Data source;
     MathAudioSource MAsource;
     void trigger(Data &data, [[maybe_unused]] Input *pin) override

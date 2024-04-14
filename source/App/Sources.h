@@ -261,7 +261,6 @@ public:
     }
     ~MathAudioSource()
     {
-        delete state;
     }
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
     {
