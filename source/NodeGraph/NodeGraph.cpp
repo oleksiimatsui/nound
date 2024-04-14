@@ -33,13 +33,13 @@ Node::Node()
 
 void Node::triggerAsync(Data &d, [[maybe_unused]] Input *pin)
 {
-    auto f = std::async(
-        std::launch::async,
-        [&](auto d, auto p)
-        { this->trigger(d, p); }, d, pin);
+    // auto f = std::async(
+    //     std::launch::async,
+    //     [&](auto d, auto p)
+    //     { this->trigger(d, p); }, d, pin);
 
-    f.wait();
-    // trigger(d, pin);
+    // f.wait();
+    trigger(d, pin);
 };
 void Node::trigger(Data &d, [[maybe_unused]] Input *pin) {
 

@@ -38,6 +38,12 @@ public:
         play_button.setButtonText("PLAY");
         play_button.onClick = [this]
         { play(); };
+        addAndMakeVisible(&stop_button);
+        stop_button.setButtonText("STOP");
+        stop_button.onClick = [this]
+        {
+            stop();
+        };
         setSize(300, 100);
     }
 
@@ -51,11 +57,20 @@ public:
     void resized() override
     {
         play_button.setBounds(0, 0, 100, 50);
+        stop_button.setBounds(100, 0, 100, 50);
     }
 
     void play()
     {
         auto graph = GraphProvider::getGraph();
+        // for (auto &[id, n] : graph->getNodes())
+        // {
+        //     if (auto out = dynamic_cast<SpeakerNode *>(n))
+        //     {
+        //         if (out->source != nullptr)
+        //             out->source->Stop();
+        //     }
+        // };
         for (auto &[id, n] : graph->getNodes())
         {
             if (auto start = dynamic_cast<StartNode *>(n))
@@ -65,9 +80,21 @@ public:
             }
         };
     }
+    void stop()
+    {
+        auto graph = GraphProvider::getGraph();
+        for (auto &[id, n] : graph->getNodes())
+        {
+            if (auto out = dynamic_cast<SpeakerNode *>(n))
+            {
+                out->source.Stop();
+            }
+        };
+    }
 
 private:
     juce::TextButton play_button;
+    juce::TextButton stop_button;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SoundResult);
 };
 
