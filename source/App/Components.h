@@ -89,3 +89,50 @@ private:
     std::unique_ptr<juce::FileChooser> filechooser = nullptr;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FileInput);
 };
+
+class Vertical : public juce::Component
+{
+public:
+    Vertical(){
+
+    };
+    void addComponent(juce::Component *c)
+    {
+        components.push_back(c);
+        addAndMakeVisible(c);
+    }
+    juce::FlexItem getFlexItem(Component *comp, int width)
+    {
+        return juce::FlexItem(width, comp->getHeight(), *comp);
+    };
+    void alignElements()
+    {
+
+        juce::FlexBox fb;
+        fb.flexDirection = juce::FlexBox::Direction::column;
+
+        for (auto &component : components)
+        {
+            fb.items.add(getFlexItem(component, getWidth()));
+        }
+
+        fb.performLayout(getLocalBounds());
+    }
+    ~Vertical(){
+
+    };
+    void paint(juce::Graphics &g) {
+
+    };
+    void resized() override
+    {
+        alignElements();
+    };
+    void browseButtonClicked()
+    {
+    }
+
+private:
+    std::vector<juce::Component *> components;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Vertical);
+};

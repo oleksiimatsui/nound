@@ -167,7 +167,7 @@ public:
                                          -0.1, -0.9,
                                          -0.9);
 
-        setSize(500, 500);
+            setSize(500, 500);
     }
     ~MainComponent() override
     {

@@ -175,39 +175,88 @@ public:
     void sliderValueChanged(juce::Slider *slider) override
     {
         double val = slider->getValue();
+
+        if (slider == &damping)
+        {
+            p.damping = val;
+        }
+        else if (slider == &dryLevel)
+        {
+            p.dryLevel = val;
+        }
+        else if (slider == &freezeMode)
+        {
+            p.freezeMode = val;
+        }
+        else if (slider == &roomSize)
+        {
+            p.roomSize = val;
+        }
+        else if (slider == &wetLevel)
+        {
+            p.wetLevel = val;
+        }
+        else if (slider == &width)
+        {
+            p.width = val;
+        }
+        if (reverb_source.r != nullptr)
+        {
+            reverb_source.r->setParameters(p);
+        }
     }
 
     ReverbNode() : EditorNode()
     {
-        internal.setRange(0, 1);         // [1]
-        internal.setTextValueSuffix(""); // [2]
-        internal.setValue(0.5);
-        internal.addListener(this);
-        internal.setSize(1000, 20);
+        int i = 0;
+        int h = ThemeProvider::getCurrentTheme()->nodeTextHeight;
+        for (auto &c : cs)
+        {
+            labels[i]->setSize(100, h * 1.5);
+            labels[i]->setFont(h);
+            internal.addComponent(labels[i]);
+            c->setRange(0, 1);         // [1]
+            c->setTextValueSuffix(""); // [2]
+            c->addListener(this);
+            c->setValue(0.5);
+            sliderValueChanged(c);
+            c->setSize(1000, h);
+            internal.addComponent(c);
+            i++;
+        }
+        internal.setSize(1000, h * (cs.size()) * 2.5);
+
         header = "Reverb";
         registerInput(InputKeys::audio_in, "audio", PinType::Signal);
         registerOutput(OutputKeys::audio_out, "audio", PinType::Signal);
     };
+
+    ~ReverbNode()
+    {
+        for (auto &n : labels)
+            delete n;
+        labels.clear();
+    }
+
     juce::Component *getInternal() override
     {
         return &internal;
     }
 
 private:
-    Data source;
-    juce::Slider internal;
-    ReverbSource reverb_source;
     juce::Reverb::Parameters p;
+    ReverbSource reverb_source;
+    Data source;
+    juce::Slider width, dryLevel, damping, freezeMode, roomSize, wetLevel;
+    std::vector<juce::Slider *> cs = {&width, &dryLevel, &damping, &freezeMode, &roomSize, &wetLevel};
+    std::vector<juce::Label *> labels = {new juce::Label({}, "width"), new juce::Label({}, "dryLevel"), new juce::Label({}, "damping"), new juce::Label({}, "freezeMode"), new juce::Label({}, "roomSize"), new juce::Label({}, "wetLevel")};
+    Vertical internal;
 
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
-
         StartableSource *input_source = std::any_cast<StartableSource *>(data);
-
         reverb_source.setSource(input_source);
-        //  p.width = 1;
-        //  reverb_source->setParameters(p);
-
+        reverb_source.r->setParameters(p);
         source = (StartableSource *)&reverb_source;
         graph->triggerPin(&outputs[OutputKeys::audio_out], source);
     }

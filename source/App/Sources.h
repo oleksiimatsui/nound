@@ -161,7 +161,6 @@ public:
     };
     void Start() override
     {
-        setFile(path);
         Stop();
         transportSource.setPosition(0);
         transportSource.start();
