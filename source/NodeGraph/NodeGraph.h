@@ -115,6 +115,8 @@ public:
 
     void triggerPin(Output *pin, Data &data);
 
+    std::vector<Input *> getInputsOfOutput(Output *pin);
+
 private:
     std::unordered_map<int, Node *> nodes;
     std::unordered_map<int, Connection *> connections;

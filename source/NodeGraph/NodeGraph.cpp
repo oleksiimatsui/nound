@@ -147,6 +147,19 @@ void Graph::triggerPin(Output *pin, Data &data)
     }
 };
 
+std::vector<Input *> Graph::getInputsOfOutput(Output *pin)
+{
+    std::vector<Input *> pins;
+    for (auto &[id, c] : connections)
+    {
+        if (c->pin_from == pin)
+        {
+            pins.push_back(c->pin_to);
+        }
+    }
+    return pins;
+}
+
 Connection *Graph::addConnection(Pin *pin1, Pin *pin2)
 {
     ConnectionBuilder factory;

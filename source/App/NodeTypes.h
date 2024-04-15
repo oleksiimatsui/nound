@@ -28,10 +28,12 @@ public:
 private:
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
-
         for (auto &[_, p] : outputs)
         {
-            GraphProvider::getGraph()->triggerPin(&p, data);
+            for (auto &input : graph->getInputsOfOutput(&p))
+            {
+                input->node->triggerAsync(data, input);
+            }
         }
     }
 };
@@ -102,23 +104,19 @@ public:
     };
 
 private:
-    Data source;
+    std::string name;
     juce::URL *currentAudioFile;
     FileInput *internal;
     FileSource filesource;
 
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
-        bool isStart = std::any_cast<bool>(data);
-        if (isStart)
+        for (auto &input : graph->getInputsOfOutput(&outputs[OutputKeys::audio_]))
         {
-            source = (StartableSource *)&filesource;
-            graph->triggerPin(&outputs[OutputKeys::audio_], source);
-        }
-        else
-        {
-            source = (StartableSource *)&filesource;
-            filesource.Stop();
+            auto fs = new FileSource();
+            fs->setFile(name);
+            Data source = (StartableSource *)(fs);
+            input->node->triggerAsync(source, input);
         }
     }
 };
@@ -157,7 +155,10 @@ private:
     {
         source = true;
         juce::Time::waitForMillisecondCounter(milliseconds);
-        graph->triggerPin(&outputs[OutputKeys::trigger_out], source);
+        for (auto &input : graph->getInputsOfOutput(&outputs[OutputKeys::trigger_out]))
+        {
+            input->node->triggerAsync(source, input);
+        }
     }
 };
 
@@ -200,10 +201,6 @@ public:
         {
             p.width = val;
         }
-        if (reverb_source.r != nullptr)
-        {
-            reverb_source.r->setParameters(p);
-        }
     }
 
     ReverbNode() : EditorNode()
@@ -245,8 +242,6 @@ public:
 
 private:
     juce::Reverb::Parameters p;
-    ReverbSource reverb_source;
-    Data source;
     juce::Slider width, dryLevel, damping, freezeMode, roomSize, wetLevel;
     std::vector<juce::Slider *> cs = {&width, &dryLevel, &damping, &freezeMode, &roomSize, &wetLevel};
     std::vector<juce::Label *> labels = {new juce::Label({}, "width"), new juce::Label({}, "dryLevel"), new juce::Label({}, "damping"), new juce::Label({}, "freezeMode"), new juce::Label({}, "roomSize"), new juce::Label({}, "wetLevel")};
@@ -255,10 +250,14 @@ private:
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
         StartableSource *input_source = std::any_cast<StartableSource *>(data);
-        reverb_source.setSource(input_source);
-        reverb_source.r->setParameters(p);
-        source = (StartableSource *)&reverb_source;
-        graph->triggerPin(&outputs[OutputKeys::audio_out], source);
+        for (auto &input : graph->getInputsOfOutput(&outputs[OutputKeys::audio_out]))
+        {
+            auto fs = new ReverbSource();
+            fs->setSource(input_source);
+            fs->r->setParameters(p);
+            Data source = (StartableSource *)(fs);
+            input->node->triggerAsync(source, input);
+        }
     }
 };
 
@@ -286,13 +285,72 @@ public:
     }
 
 private:
-    Data source;
-    RandomSource random;
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
+        for (auto &input : graph->getInputsOfOutput(&outputs[OutputKeys::audio_out]))
+        {
+            auto fs = new RandomSource();
+            Data source = (StartableSource *)(fs);
+            input->node->triggerAsync(source, input);
+        }
+    }
+};
 
-        source = (StartableSource *)(&random);
-        graph->triggerPin(&outputs[OutputKeys::audio_out], source);
+class SineNode : public EditorNode, public juce::Slider::Listener
+{
+public:
+    enum InputKeys
+    {
+        start
+    };
+    enum OutputKeys
+    {
+        audio_out
+    };
+    void sliderValueChanged(juce::Slider *slider) override
+    {
+        double val = slider->getValue();
+        frequency = val;
+    }
+    SineNode()
+    {
+        header = "Sine";
+        registerInput(InputKeys::start, "start", PinType::Control);
+        registerOutput(OutputKeys::audio_out, "audio", PinType::Signal);
+
+        int h = ThemeProvider::getCurrentTheme()->nodeTextHeight;
+        auto l = new juce::Label({}, "frequency");
+        l->setSize(1000, h * 1.5);
+        l->setFont(h);
+        internal.addComponent(l);
+
+        auto s = new juce::Slider();
+        s->setSize(1000, h * 1.5);
+        s->setRange(0.01, 1000);   // [1]
+        s->setTextValueSuffix(""); // [2]
+        s->addListener(this);
+        s->setValue(440);
+        internal.addComponent(s);
+
+        internal.setSize(1000, h * 3);
+    };
+    juce::Component *getInternal() override
+    {
+        return &internal;
+    }
+
+private:
+    Vertical internal;
+    float frequency = 440;
+
+    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    {
+        for (auto &input : graph->getInputsOfOutput(&outputs[OutputKeys::audio_out]))
+        {
+            auto fs = new SineSource(frequency);
+            Data source = (StartableSource *)(fs);
+            input->node->triggerAsync(source, input);
+        }
     }
 };
 
@@ -310,10 +368,11 @@ public:
     };
     AudioMathNode()
     {
+        s1 = nullptr;
+        s2 = nullptr;
         header = "Audio Math";
         registerInput(InputKeys::audio_1, "audio", PinType::Signal);
         registerInput(InputKeys::audio_2, "audio", PinType::Signal);
-
         registerOutput(OutputKeys::audio_out, "audio", PinType::Signal);
     };
     enum Operations
@@ -331,7 +390,7 @@ public:
         c->addItem("Subtract", Operations::substract);
         c->addItem("Multiply", Operations::multiply);
         c->addItem("Divide", Operations::divide);
-        c->setItemEnabled(Operations::add, false);
+        c->setSelectedId(Operations::add);
         c->onChange = [this]
         { operationChanged(); };
         return c;
@@ -341,41 +400,81 @@ public:
         switch (c->getSelectedId())
         {
         case Operations::add:
-            MAsource.state = new MathAudioSource::Add();
+            state = new MathAudioSource::Add();
             break;
         case Operations::substract:
-            MAsource.state = new MathAudioSource::Substract();
+            state = new MathAudioSource::Substract();
             break;
         case Operations::multiply:
-            MAsource.state = new MathAudioSource::Multiply();
+            state = new MathAudioSource::Multiply();
             break;
         case Operations::divide:
-            MAsource.state = new MathAudioSource::Divide();
+            state = new MathAudioSource::Divide();
             break;
         }
     };
 
 private:
     juce::ComboBox *c;
-    Data source;
-    MathAudioSource MAsource;
+    MathAudioSource::State *state;
+    StartableSource *s1;
+    StartableSource *s2;
+
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
         if (StartableSource *f = std::any_cast<StartableSource *>(data))
         {
             if (pin == &inputs[InputKeys::audio_1])
             {
-                MAsource.s1 = f;
+                s1 = f;
             }
             else if (pin == &inputs[InputKeys::audio_2])
             {
-                MAsource.s2 = f;
+                s2 = f;
             }
-            if (MAsource.s1 != nullptr && MAsource.s2 != nullptr)
+            if (s1 != nullptr && s2 != nullptr)
             {
-                source = (StartableSource *)(&MAsource);
-                graph->triggerPin(&outputs[OutputKeys::audio_out], source);
+                for (auto &input : graph->getInputsOfOutput(&outputs[OutputKeys::audio_out]))
+                {
+                    auto s = new MathAudioSource();
+                    s->s1 = s1;
+                    s->s2 = s2;
+                    Data source = (StartableSource *)(s);
+                    input->node->triggerAsync(source, input);
+                }
             }
         }
+    }
+};
+
+class AudioToNumberNode : public EditorNode
+{
+public:
+    enum InputKeys
+    {
+        audio_in
+    };
+    enum OutputKeys
+    {
+        number_out
+    };
+    AudioToNumberNode()
+    {
+        header = "AudioToNumbers";
+        registerInput(InputKeys::audio_in, "audio", PinType::Control);
+        registerOutput(OutputKeys::number_out, "number", PinType::Signal);
+    };
+    juce::Component *getInternal() override
+    {
+        return nullptr;
+    }
+
+private:
+    Data datatosend;
+    Vertical internal;
+    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    {
+
+        // graph->triggerPin(&outputs[OutputKeys::audio_out], datatosend);
     }
 };

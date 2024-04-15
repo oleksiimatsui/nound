@@ -211,6 +211,52 @@ public:
     juce::Random random;
 };
 
+class SineSource : public StartableSource
+{
+public:
+    SineSource(float &f) : frequency(f), StartableSource()
+    {
+    }
+
+    void prepareToPlay(int samplesPerBlockExpected, double _sampleRate) override
+    {
+        period = 1.0f / _sampleRate;
+    }
+    void releaseResources() override
+    {
+    }
+
+    void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
+    {
+        for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+        {
+            auto *buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
+            for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
+            {
+                if (currentTime >= 1.0f)
+                {
+                    currentTime = 0.0f;
+                }
+                auto currentSample = (float)std::sin(2.0f * juce::MathConstants<float>::pi * frequency * currentTime + 0.0f);
+                currentTime += period;
+                buffer[sample] = currentSample;
+            }
+        }
+    }
+    void setFrequency(float &_frequency)
+    {
+        frequency = _frequency;
+    }
+    void Start() override
+    {
+    }
+    void Stop() override
+    {
+    }
+    float &frequency;
+    float period = 0.0, currentTime = 0.0;
+};
+
 class MathAudioSource : public StartableSource
 {
 public:
@@ -318,4 +364,32 @@ public:
     juce::AudioBuffer<float> temp1;
     juce::AudioBuffer<float> temp2;
     State *state;
+};
+
+class TriggeringSource : public juce::Timer
+{
+    TriggeringSource()
+    {
+        source = nullptr;
+    };
+    void setSource(StartableSource *s)
+    {
+        source = s;
+    }
+    void StartTimer()
+    {
+        source->Start();
+    }
+
+    void timerCallback() override
+    {
+        source->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp, 0, HZ));
+        auto buffer = temp.getReadPointer(1);
+        buffer[0];
+    }
+
+private:
+    StartableSource *source;
+    int HZ = 400;
+    juce::AudioBuffer<float> temp;
 };

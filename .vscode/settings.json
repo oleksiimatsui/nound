@@ -91,7 +91,10 @@
     "xtree": "cpp",
     "xutility": "cpp",
     "*.mm": "cpp",
-    "any": "cpp"
+    "any": "cpp",
+    "coroutine": "cpp",
+    "resumable": "cpp",
+    "csignal": "cpp"
   },
   "cSpell.words": ["juce", "Nound"]
 }
