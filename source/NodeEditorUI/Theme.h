@@ -26,6 +26,7 @@ public:
     int selectedNodeBorderWidth;
     int padding;
     int nodeTextHeight;
+    int headerHeight;
 };
 
 class DefaultTheme : public Theme
@@ -35,7 +36,7 @@ public:
     {
         editorColor = juce::Colour::fromRGB(39, 24, 36);
         nodeColor = juce::Colour::fromRGBA(58, 59, 67, 0.72 * 255);
-        nodeHeaderColor = juce::Colour::fromRGB(47, 72, 119);
+        nodeHeaderColor = juce::Colour::fromRGB(74, 47, 119);
         nodeInputColor = juce::Colour::fromRGB(217, 217, 217);
         controlPinColor = juce::Colour::fromRGB(109, 211, 255);
         soundPinColor = juce::Colour::fromRGB(217, 255, 138);
@@ -46,11 +47,12 @@ public:
         selectedNodeBorderWidth = 2;
         pinDiameter = 10;
         pinSpacing = 12;
-        nodeRounding = 16;
+        nodeRounding = 8;
         nodeWidth = 150;
         connectionsThickness = 4;
         padding = 12;
         nodeTextHeight = 12;
+        headerHeight = 24;
     };
 
 private:

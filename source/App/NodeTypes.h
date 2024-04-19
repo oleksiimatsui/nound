@@ -188,7 +188,7 @@ public:
         int h = ThemeProvider::getCurrentTheme()->nodeTextHeight;
         header = "Reverb";
         registerInput(InputKeys::audio_in, "audio", PinType::Audio);
-        registerInput(OutputKeys::audio_out, "audio", PinType::Audio);
+        registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
         registerInputWithComponent(InputKeys::width, "width", PinType::Number, new NumberInput(this, 0, 1, &(p.width)));
         registerInputWithComponent(InputKeys::damping, "damping", PinType::Number, new NumberInput(this, 0, 1, &(p.damping)));
         registerInputWithComponent(InputKeys::dryLevel, "dryLevel", PinType::Number, new NumberInput(this, 0, 1, &(p.dryLevel)));
@@ -280,7 +280,7 @@ public:
     SineNode() : EditorNode()
     {
         header = "Sine";
-        registerInputWithComponent(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 1000, &(frequency)));
+        registerInputWithComponent(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)));
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
     };
 

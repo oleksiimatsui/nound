@@ -23,7 +23,7 @@ public:
         f.setHeight(theme->nodeTextHeight);
         spacing = theme->pinDiameter * 2;
         height = 0;
-        height += spacing * 2;
+        height += theme->headerHeight;
 
         for (auto &[_, p] : node->inputs)
         {
@@ -88,6 +88,8 @@ public:
         }
 
         setTransform(juce::AffineTransform::translation(_position));
+
+        height += spacing;
         setSize(theme->nodeWidth, height);
     }
 
@@ -120,7 +122,7 @@ public:
             getX() + theme->pinDiameter / 2,
             getY(),
             theme->nodeWidth - theme->pinDiameter,
-            spacing,
+            theme->headerHeight,
             theme->nodeRounding,
             theme->nodeRounding,
             true,
@@ -129,7 +131,7 @@ public:
             false);
         g.fillPath(p);
         g.setColour((theme->nodeTextColor));
-        g.drawText(node->header, juce::Rectangle<int>(getX() + theme->pinDiameter / 2, getY(), theme->nodeWidth - theme->pinDiameter, spacing), juce::Justification::centred, true);
+        g.drawText(node->header, juce::Rectangle<int>(getX() + theme->pinDiameter / 2, getY(), theme->nodeWidth - theme->pinDiameter, theme->headerHeight), juce::Justification::centred, true);
 
         if (selected)
         {
@@ -141,7 +143,7 @@ public:
     void resized() override
     {
         int i = 0;
-        int margin = spacing - spacing * 0.5;
+        int margin = theme->headerHeight - spacing / 2;
         for (auto &p : outputs)
         {
             margin += spacing;
