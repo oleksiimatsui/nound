@@ -220,7 +220,8 @@ public:
 
     void prepareToPlay(int samplesPerBlockExpected, double _sampleRate) override
     {
-        period = 1.0f / _sampleRate;
+        sampleRate = _sampleRate;
+        period = 1.0f / sampleRate;
     }
     void releaseResources() override
     {
@@ -233,12 +234,12 @@ public:
             auto *buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
             for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
             {
-                if (currentTime >= 1.0f)
+                if (n >= std::numeric_limits<int>::max())
                 {
-                    currentTime = 0.0f;
+                    n = 0;
                 }
-                auto currentSample = (float)std::sin(2.0f * juce::MathConstants<float>::pi * frequency * currentTime + phase);
-                currentTime += period;
+                auto currentSample = (float)std::sin(2.0f * juce::MathConstants<float>::pi * frequency * period * n + phase);
+                n++;
                 buffer[sample] = currentSample;
             }
         }
@@ -251,7 +252,9 @@ public:
     }
     float &frequency;
     float &phase;
-    float period = 0.0, currentTime = 0.0;
+    float period = 0.0;
+    int n = 0;
+    double sampleRate = 0;
 };
 
 class MathAudioSource : public StartableSource
