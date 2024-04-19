@@ -214,7 +214,7 @@ public:
 class SineSource : public StartableSource
 {
 public:
-    SineSource(float &f) : frequency(f), StartableSource()
+    SineSource(float &f, float &p) : frequency(f), phase(p), StartableSource()
     {
     }
 
@@ -237,15 +237,11 @@ public:
                 {
                     currentTime = 0.0f;
                 }
-                auto currentSample = (float)std::sin(2.0f * juce::MathConstants<float>::pi * frequency * currentTime + 0.0f);
+                auto currentSample = (float)std::sin(2.0f * juce::MathConstants<float>::pi * frequency * currentTime + phase);
                 currentTime += period;
                 buffer[sample] = currentSample;
             }
         }
-    }
-    void setFrequency(float &_frequency)
-    {
-        frequency = _frequency;
     }
     void Start() override
     {
@@ -254,6 +250,7 @@ public:
     {
     }
     float &frequency;
+    float &phase;
     float period = 0.0, currentTime = 0.0;
 };
 
@@ -263,7 +260,10 @@ public:
     class State
     {
     public:
-        virtual float operation(float a, float b) = 0;
+        virtual float operation(float a, float b)
+        {
+            return 0;
+        }
     };
     class Add : public State
     {
@@ -297,10 +297,13 @@ public:
             return a / b;
         }
     };
-
+    class StateHolder
+    {
+    public:
+        virtual State *getState() = 0;
+    };
     MathAudioSource()
     {
-        state = new Add();
         s1 = nullptr;
         s2 = nullptr;
     }
@@ -342,7 +345,7 @@ public:
 
             auto buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
             for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
-                buffer[sample] = state->operation(buffer1[sample], buffer2[sample]);
+                buffer[sample] = stateholder->getState()->operation(buffer1[sample], buffer2[sample]);
         }
     }
     void Start() override
@@ -363,7 +366,7 @@ public:
     StartableSource *s2;
     juce::AudioBuffer<float> temp1;
     juce::AudioBuffer<float> temp2;
-    State *state;
+    StateHolder *stateholder;
 };
 
 class TriggeringSource : public juce::Timer

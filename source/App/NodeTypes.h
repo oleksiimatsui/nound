@@ -270,7 +270,8 @@ class SineNode : public EditorNode, NumberInput::Listener
 public:
     enum InputKeys
     {
-        frequency_
+        frequency_,
+        phase_
     };
     enum OutputKeys
     {
@@ -280,8 +281,9 @@ public:
     SineNode() : EditorNode()
     {
         header = "Sine";
-        registerInputWithComponent(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)));
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
+        registerInputWithComponent(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)));
+        registerInputWithComponent(InputKeys::phase_, "phase", PinType::Number, new NumberInput(this, 0, 5000, &(phase)));
     };
 
     juce::Component *getInternal() override
@@ -291,19 +293,20 @@ public:
 
 private:
     float frequency = 440;
+    float phase = 0;
 
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
         {
-            auto fs = new SineSource(frequency);
+            auto fs = new SineSource(frequency, phase);
             Data source = (StartableSource *)(fs);
             input->node->triggerAsync(source, input);
         }
     }
 };
 
-class AudioMathNode : public EditorNode
+class AudioMathNode : public EditorNode, public MathAudioSource::StateHolder
 {
 public:
     enum InputKeys
@@ -317,8 +320,14 @@ public:
     };
     AudioMathNode()
     {
+        states[Operations::add] = new MathAudioSource::Add();
+        states[Operations::divide] = new MathAudioSource::Divide();
+        states[Operations::substract] = new MathAudioSource::Substract();
+        states[Operations::multiply] = new MathAudioSource::Multiply();
+
         s1 = nullptr;
         s2 = nullptr;
+        c = nullptr;
         header = "Audio Math";
         registerInput(InputKeys::audio_1, "audio", PinType::Audio);
         registerInput(InputKeys::audio_2, "audio", PinType::Audio);
@@ -346,22 +355,28 @@ public:
     }
     void operationChanged()
     {
+        //  state = &states[(Operations)c->getSelectedId()];
         switch (c->getSelectedId())
         {
         case Operations::add:
-            state = new MathAudioSource::Add();
+            state = states[Operations::add];
             break;
         case Operations::substract:
-            state = new MathAudioSource::Substract();
+            state = states[Operations::substract];
             break;
         case Operations::multiply:
-            state = new MathAudioSource::Multiply();
+            state = states[Operations::multiply];
             break;
         case Operations::divide:
-            state = new MathAudioSource::Divide();
+            state = states[Operations::divide];
             break;
         }
     };
+    std::unordered_map<Operations, MathAudioSource::State *> states;
+    MathAudioSource::State *getState() override
+    {
+        return state;
+    }
 
 private:
     juce::ComboBox *c;
@@ -388,6 +403,7 @@ private:
                     auto s = new MathAudioSource();
                     s->s1 = s1;
                     s->s2 = s2;
+                    s->stateholder = this;
                     Data source = (StartableSource *)(s);
                     input->node->triggerAsync(source, input);
                 }
