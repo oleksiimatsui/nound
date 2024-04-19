@@ -22,7 +22,6 @@ target_sources(App
     Components.h 
 
     AppTheme.cpp
-    NoundAudioProcessor.cpp
     Main.cpp
     GraphProvider.cpp
 )

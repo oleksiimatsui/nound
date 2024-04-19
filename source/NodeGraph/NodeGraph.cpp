@@ -30,6 +30,15 @@ Node::Node()
     graph = nullptr;
     id = -1;
 };
+Node::~Node()
+{
+    for (auto &[_, n] : inputs)
+        delete n;
+    inputs.clear();
+    for (auto &[_, n] : outputs)
+        delete n;
+    outputs.clear();
+};
 
 void Node::triggerAsync(Data &d, [[maybe_unused]] Input *pin)
 {
@@ -46,12 +55,12 @@ void Node::trigger(Data &d, [[maybe_unused]] Input *pin) {
 };
 void Node::registerInput(int key, const std::string &name, PinType type)
 {
-    inputs[key] = Input(key, name, type, this);
+    inputs[key] = new Input(key, name, type, this);
     // inputs.push_back(Input(inputs.size(), name, type, this));
 };
 void Node::registerOutput(int key, const std::string &name, PinType type)
 {
-    outputs[key] = Output(key, name, type, this);
+    outputs[key] = new Output(key, name, type, this);
 };
 
 Connection::Connection(Output *from, Input *to)
@@ -188,6 +197,19 @@ std::vector<int> Graph::getConnectionsOfNode(int node_id)
     for (auto &[id, c] : connections)
     {
         if (c->getNodeToId() == node_id || c->getNodeFromId() == node_id)
+        {
+            ids.push_back(id);
+        }
+    }
+
+    return ids;
+};
+std::vector<int> Graph::getInputConnectionsOfNode(int node_id)
+{
+    std::vector<int> ids;
+    for (auto &[id, c] : connections)
+    {
+        if (c->getNodeToId() == node_id)
         {
             ids.push_back(id);
         }

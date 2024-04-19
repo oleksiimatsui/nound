@@ -21,24 +21,36 @@ public:
         node = _node;
         theme = ThemeProvider::getCurrentTheme();
         f.setHeight(theme->nodeTextHeight);
+        spacing = theme->pinDiameter * 2;
+        height = 0;
+        height += spacing * 2;
 
         for (auto &[_, p] : node->inputs)
         {
-            auto pin = new PinComponent(&p);
+            auto pin = new PinComponent(p);
             inputs.push_back(pin);
-            auto label = new juce::Label({}, p.name);
+            auto label = new juce::Label({}, p->name);
             label->setFont(f);
             label->setColour(juce::Label::textColourId, theme->nodeTextColor);
             inputNames.push_back(label);
+            height += spacing;
+
+            juce::Component *in = node->getInternal(p->key);
+            if (in != nullptr)
+            {
+                addAndMakeVisible(in);
+                height += in->getHeight();
+            }
         }
         for (auto &[_, p] : node->outputs)
         {
-            auto pin = new PinComponent(&p);
+            auto pin = new PinComponent(p);
             outputs.push_back(pin);
-            auto label = new juce::Label({}, p.name);
+            auto label = new juce::Label({}, p->name);
             label->setFont(f);
             label->setColour(juce::Label::textColourId, theme->nodeTextColor);
             outputNames.push_back(label);
+            height += spacing;
         }
         for (auto &p : inputNames)
         {
@@ -65,8 +77,7 @@ public:
 
         position = _position;
 
-        spacing = theme->pinDiameter * 2;
-        height = spacing + spacing + spacing * (node->outputs.size()) + spacing * (node->inputs.size());
+        // height = spacing + spacing + spacing * (node->outputs.size()) + spacing * (node->inputs.size() * 2);
 
         internal = node->getInternal();
 
@@ -129,33 +140,43 @@ public:
 
     void resized() override
     {
+        int i = 0;
         int margin = spacing - spacing * 0.5;
         for (auto &p : outputs)
         {
             margin += spacing;
             p->setBounds(theme->nodeWidth - theme->pinDiameter, margin - theme->pinDiameter / 2, theme->pinDiameter, theme->pinDiameter);
+            outputNames[i]->setBounds(theme->padding, margin - spacing / 2, theme->nodeWidth - theme->padding * 2, spacing);
+            i++;
         }
+        i = 0;
+        margin += spacing;
         for (auto &p : inputs)
         {
-            margin += spacing;
+
             p->setBounds(0, margin - theme->pinDiameter / 2, theme->pinDiameter, theme->pinDiameter);
-        }
-        margin = spacing - spacing * 0.5;
-        for (auto &p : outputNames)
-        {
-            margin += spacing;
-            p->setBounds(theme->padding, margin - spacing / 2, theme->nodeWidth - theme->padding * 2, spacing);
-        }
-        for (auto &p : inputNames)
-        {
-            margin += spacing;
-            p->setBounds(theme->padding, margin - spacing / 2, theme->nodeWidth - theme->padding * 2, spacing);
+            auto label = inputNames[i];
+            label->setBounds(theme->padding, margin - spacing / 2, theme->nodeWidth - theme->padding * 2, spacing);
+            juce::Component *in = node->getInternal(p->pin->key);
+            if (in != nullptr)
+            {
+                margin += spacing;
+                in->setBounds(theme->padding, margin - spacing / 2, theme->nodeWidth - theme->padding * 2, in->getHeight());
+                margin += in->getHeight();
+            }
+            else
+            {
+                margin += spacing;
+            }
+
+            i++;
         }
 
         if (internal == nullptr)
             return;
-        margin += spacing;
+
         internal->setBounds(theme->padding, margin, theme->nodeWidth - theme->padding * 2, internal->getHeight());
+        margin += spacing;
     }
 
 private:

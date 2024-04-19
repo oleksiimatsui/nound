@@ -5,28 +5,33 @@
 #include "NodeGraph.h"
 #include "NodeTypes.h"
 
+class PinComponent : public juce::Component
+{
+public:
+    PinComponent(Pin *_pin)
+    {
+        pin = _pin;
+        theme = ThemeProvider::getCurrentTheme();
+        setSize(theme->pinDiameter, theme->pinDiameter); // Set the size of the child component
+    }
+    void paint(juce::Graphics &g) override
+    {
+        juce::Path p;
+        p.addEllipse(0, 0, theme->pinDiameter, theme->pinDiameter);
+        g.setColour(pin->type == PinType::Number ? theme->controlPinColor : theme->soundPinColor);
+        g.fillPath(p);
+    }
+    void resized()
+    {
+        setSize(theme->pinDiameter, theme->pinDiameter);
+    }
+    juce::Colour getColor()
+    {
+        return pin->type == PinType::Number ? theme->controlPinColor : theme->soundPinColor;
+    }
+    Pin *pin;
 
-class PinComponent : public juce::Component {
-    public:
-        PinComponent(Pin * _pin) {
-            pin = _pin;
-            theme = ThemeProvider::getCurrentTheme();
-            setSize(theme->pinDiameter, theme->pinDiameter); // Set the size of the child component
-        }
-        void paint(juce::Graphics& g)  override {
-            juce::Path p;
-            p.addEllipse(0, 0, theme->pinDiameter,theme->pinDiameter);
-            g.setColour(pin->type==PinType::Control ?  theme->controlPinColor : theme->soundPinColor);
-            g.fillPath(p);
-        }
-        void resized() {
-            setSize(theme->pinDiameter, theme->pinDiameter);
-        }
-        juce::Colour getColor(){
-            return pin->type==PinType::Control ?  theme->controlPinColor : theme->soundPinColor;
-        }
-    Pin * pin;
-    private:
-        Theme * theme;
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PinComponent)
-    };
+private:
+    Theme *theme;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PinComponent)
+};

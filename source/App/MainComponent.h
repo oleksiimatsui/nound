@@ -1,6 +1,5 @@
 #pragma once
 #include "string"
-#include "NoundAudioProcessor.h"
 #include <JuceHeader.h>
 #include <juce_gui_extra/juce_gui_extra.h>
 #include "NodeEditorComponent.h"
@@ -65,10 +64,9 @@ public:
         auto graph = GraphProvider::getGraph();
         for (auto &[id, n] : graph->getNodes())
         {
-            if (auto start = dynamic_cast<StartNode *>(n))
+            if (graph->getInputConnectionsOfNode(id).size() == 0)
             {
-                Data data = true;
-                start->triggerAsync(data, nullptr);
+                n->triggerAsync(Data(true), nullptr);
             }
         };
     }
@@ -167,7 +165,7 @@ public:
                                          -0.1, -0.9,
                                          -0.9);
 
-            setSize(500, 500);
+        setSize(500, 500);
     }
     ~MainComponent() override
     {

@@ -8,8 +8,8 @@
 
 enum PinType
 {
-    Signal,
-    Control
+    Audio,
+    Number
 };
 class Node;
 class ConnectionBuilder;
@@ -49,9 +49,10 @@ class Node
 {
 public:
     Node();
+    ~Node();
     std::string header;
-    std::map<int, Output> outputs = {};
-    std::map<int, Input> inputs = {};
+    std::map<int, Output *> outputs = {};
+    std::map<int, Input *> inputs = {};
     int id;
     Graph *graph;
     void triggerAsync(Data &v, [[maybe_unused]] Input *pin);
@@ -108,6 +109,7 @@ public:
     void addNode(Node *node);
     Connection *addConnection(Pin *pin1, Pin *pin2);
     std::vector<int> getConnectionsOfNode(int id);
+    std::vector<int> getInputConnectionsOfNode(int id);
     void deleteConnection(int id);
     void deleteNode(int id);
 

@@ -90,6 +90,46 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FileInput);
 };
 
+class NumberInput : public juce::Component, public juce::Slider::Listener
+{
+public:
+    class Listener
+    {
+    public:
+        virtual void valueChanged() {
+
+        };
+    };
+    void sliderValueChanged(juce::Slider *slider) override
+    {
+        *value = slider->getValue();
+        listener->valueChanged();
+    }
+    NumberInput(NumberInput::Listener *_node, float min, float max, float *val)
+    {
+        listener = _node;
+        value = val;
+        slider.setRange(min, max);
+        slider.addListener(this);
+        slider.setSliderStyle(juce::Slider::LinearBar);
+        slider.setTextBoxStyle(juce::Slider::TextEntryBoxPosition::TextBoxLeft, false, slider.getTextBoxWidth(), slider.getTextBoxHeight());
+        auto theme = ThemeProvider::getCurrentTheme();
+        slider.setSize(100, theme->nodeTextHeight * 1.5);
+        slider.setValue((*value));
+        addAndMakeVisible(slider);
+        setSize(100, theme->nodeTextHeight * 1.5);
+    };
+    void resized() override
+    {
+        slider.setBounds(getLocalBounds());
+    };
+
+private:
+    float *value;
+    juce::Slider slider;
+    Listener *listener;
+};
+
 class Vertical : public juce::Component
 {
 public:
