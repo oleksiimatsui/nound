@@ -36,7 +36,7 @@ public:
     {
         editorColor = juce::Colour::fromRGB(39, 24, 36);
         nodeColor = juce::Colour::fromRGBA(58, 59, 67, 0.72 * 255);
-        nodeHeaderColor = juce::Colour::fromRGB(74, 47, 119);
+        nodeHeaderColor = juce::Colour::fromRGB(47, 72, 119);
         nodeInputColor = juce::Colour::fromRGB(217, 217, 217);
         controlPinColor = juce::Colour::fromRGB(109, 211, 255);
         soundPinColor = juce::Colour::fromRGB(217, 255, 138);

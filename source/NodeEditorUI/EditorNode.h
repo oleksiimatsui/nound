@@ -31,6 +31,11 @@ public:
         return internals[key];
     }
 
+    void triggerAsync(Data &v, [[maybe_unused]] Input *pin) override
+    {
+        trigger(v, pin);
+    }
+
 private:
     std::map<int, juce::Component *> internals;
 };

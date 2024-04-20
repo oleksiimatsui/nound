@@ -91,27 +91,37 @@ public:
 
     ~FileReader()
     {
+        for (auto &s : sources)
+        {
+            delete s;
+        }
+        sources.clear();
     }
-    void setFile(juce::URL *resource, std::string name) override
+    void setFile(juce::URL *resource, std::string _name) override
     {
         currentAudioFile = resource;
-        filesource.setFile(name);
+        name = _name;
     };
 
 private:
     std::string name;
     juce::URL *currentAudioFile;
     FileInput *internal;
-    FileSource filesource;
+    std::vector<StartableSource *> sources;
 
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_]))
+        auto connection_inputs = graph->getInputsOfOutput(outputs[OutputKeys::audio_]);
+        for (auto &input : connection_inputs)
         {
             auto fs = new FileSource();
             fs->setFile(name);
-            Data source = (StartableSource *)(fs);
-            input->node->triggerAsync(source, input);
+            sources.push_back(fs);
+        }
+        for (int i = 0; i < connection_inputs.size(); i++)
+        {
+            auto input = connection_inputs[i];
+            input->node->triggerAsync((Data)sources[i], input);
         }
     }
 };
