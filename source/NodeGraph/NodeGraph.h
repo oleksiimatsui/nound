@@ -6,10 +6,11 @@
 #include <stdexcept>
 #include <future>
 
-enum PinType
+enum class PinType
 {
     Audio,
-    Number
+    Number,
+    Waveform
 };
 class Node;
 class ConnectionBuilder;
@@ -55,10 +56,10 @@ public:
     std::map<int, Input *> inputs = {};
     int id;
     Graph *graph;
-    void virtual triggerAsync(Data &v, [[maybe_unused]] Input *pin);
+    void virtual trigger(Data &v, [[maybe_unused]] Input *pin);
 
 protected:
-    void virtual trigger(Data &v, [[maybe_unused]] Input *pin);
+    //  void virtual trigger(Data &v, [[maybe_unused]] Input *pin);
     void registerInput(int key, const std::string &name, PinType type);
     void registerOutput(int key, const std::string &name, PinType type);
 };

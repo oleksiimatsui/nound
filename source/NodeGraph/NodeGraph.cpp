@@ -40,10 +40,6 @@ Node::~Node()
     outputs.clear();
 };
 
-void Node::triggerAsync(Data &d, [[maybe_unused]] Input *pin)
-{
-    trigger(d, pin);
-};
 void Node::trigger(Data &d, [[maybe_unused]] Input *pin) {
 
 };
@@ -141,7 +137,7 @@ void Graph::triggerPin(Output *pin, Data &data)
         if (c->pin_from == pin)
         {
             auto node = c->pin_to->node;
-            node->triggerAsync(data, c->pin_to);
+            node->trigger(data, c->pin_to);
             for (auto &l : listeners)
             {
                 l->message("connection " + std::to_string(id) + " is triggered");

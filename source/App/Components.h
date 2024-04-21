@@ -123,6 +123,21 @@ public:
     {
         slider.setBounds(getLocalBounds());
     };
+    void update()
+    {
+        auto fn = [this]()
+        {
+            slider.setValue(*value);
+        };
+        if (juce::MessageManager::getInstance()->isThisTheMessageThread())
+        {
+            fn();
+        }
+        else
+        {
+            juce::MessageManager::callAsync(std::move(fn));
+        }
+    }
 
 private:
     float *value;

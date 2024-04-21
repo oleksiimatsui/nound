@@ -18,7 +18,7 @@ public:
     {
         juce::Path p;
         p.addEllipse(0, 0, theme->pinDiameter, theme->pinDiameter);
-        g.setColour(pin->type == PinType::Number ? theme->controlPinColor : theme->soundPinColor);
+        g.setColour(getColor());
         g.fillPath(p);
     }
     void resized()
@@ -27,7 +27,20 @@ public:
     }
     juce::Colour getColor()
     {
-        return pin->type == PinType::Number ? theme->controlPinColor : theme->soundPinColor;
+        juce::Colour res;
+        switch (pin->type)
+        {
+        case PinType::Number:
+            res = theme->numberPinColor;
+            break;
+        case PinType::Waveform:
+            res = theme->wavePinColor;
+            break;
+        case PinType::Audio:
+            res = theme->soundPinColor;
+            break;
+        }
+        return res;
     }
     Pin *pin;
 
