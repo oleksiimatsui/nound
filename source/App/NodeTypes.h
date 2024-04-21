@@ -31,7 +31,7 @@
 //         {
 //             for (auto &input : graph->getInputsOfOutput(p))
 //             {
-//                 input->node->triggerAsync(data, input);
+//                 input->node->trigger(data, input);
 //             }
 //         }
 //     }
@@ -121,7 +121,7 @@ private:
         for (int i = 0; i < connection_inputs.size(); i++)
         {
             auto input = connection_inputs[i];
-            input->node->triggerAsync((Data)sources[i], input);
+            input->node->trigger((Data)sources[i], input);
         }
     }
 };
@@ -162,7 +162,7 @@ private:
         juce::Time::waitForMillisecondCounter(milliseconds);
         // for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::trigger_out]))
         // {
-        //     input->node->triggerAsync(source, input);
+        //     input->node->trigger(source, input);
         // }
     }
 };
@@ -237,7 +237,7 @@ private:
             fs->setSource(input_source);
             fs->r->setParameters(p);
             Data source = (StartableSource *)(fs);
-            input->node->triggerAsync(source, input);
+            input->node->trigger(source, input);
         }
     }
 };
@@ -270,7 +270,7 @@ private:
         {
             auto fs = new RandomSource();
             Data source = (StartableSource *)(fs);
-            input->node->triggerAsync(source, input);
+            input->node->trigger(source, input);
         }
     }
 };
@@ -307,11 +307,16 @@ private:
 
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
+        if (pin == inputs[InputKeys::frequency_])
+        {
+            frequency = std::any_cast<float>(data);
+            ((NumberInput *)internals[InputKeys::frequency_])->update();
+        }
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
         {
             auto fs = new SineSource(frequency, phase);
             Data source = (StartableSource *)(fs);
-            input->node->triggerAsync(source, input);
+            input->node->trigger(source, input);
         }
     }
 };
@@ -415,14 +420,14 @@ private:
                     s->s2 = s2;
                     s->stateholder = this;
                     Data source = (StartableSource *)(s);
-                    input->node->triggerAsync(source, input);
+                    input->node->trigger(source, input);
                 }
             }
         }
     }
 };
 
-class AudioToNumberNode : public EditorNode
+class AudioToNumberNode : public EditorNode, TriggeringSource::Listener
 {
 public:
     enum InputKeys
@@ -431,25 +436,154 @@ public:
     };
     enum OutputKeys
     {
+        audio_out,
         number_out
     };
     AudioToNumberNode()
     {
-        header = "AudioToNumbers";
-        registerInput(InputKeys::audio_in, "audio", PinType::Number);
-        registerOutput(OutputKeys::number_out, "number", PinType::Audio);
+        header = "Amplitude Trigger";
+        registerInput(InputKeys::audio_in, "audio", PinType::Audio);
+        registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
+        registerOutput(OutputKeys::number_out, "amplitude", PinType::Number);
     };
     juce::Component *getInternal() override
     {
         return nullptr;
     }
+    void onTrigger(float amplitude) override
+    {
+        for (auto &input : listeners)
+        {
+            input->node->trigger((Data)amplitude, input);
+        }
+    }
 
 private:
     Data datatosend;
     Vertical internal;
+    std::vector<Input *> listeners;
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
+        if (StartableSource *f = std::any_cast<StartableSource *>(data))
+        {
 
-        // graph->triggerPin(&outputs[OutputKeys::audio_out], datatosend);
+            listeners = graph->getInputsOfOutput(outputs[OutputKeys::number_out]);
+
+            for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
+            {
+                auto s = new TriggeringSource(*this);
+                s->setSource(f);
+                Data source = (StartableSource *)(s);
+                input->node->trigger(source, input);
+            }
+        }
+    }
+};
+
+class NumberMathNode : public EditorNode, NumberInput::Listener
+{
+public:
+    enum InputKeys
+    {
+        number_1,
+        number_2
+    };
+    enum OutputKeys
+    {
+        number_out
+    };
+    NumberMathNode()
+    {
+        states[Operations::add] = new MathAudioSource::Add();
+        states[Operations::divide] = new MathAudioSource::Divide();
+        states[Operations::substract] = new MathAudioSource::Substract();
+        states[Operations::multiply] = new MathAudioSource::Multiply();
+        c = nullptr;
+        header = "Number Math";
+        registerInputWithComponent(InputKeys::number_1, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val1)));
+        registerInputWithComponent(InputKeys::number_2, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val2)));
+        registerOutput(OutputKeys::number_out, "number", PinType::Number);
+    };
+    enum Operations
+    {
+        add = 1,
+        substract,
+        multiply,
+        divide
+    };
+    juce::Component *getInternal() override
+    {
+        c = new juce::ComboBox();
+        c->setSize(1000, 20);
+        c->addItem("Add", Operations::add);
+        c->addItem("Subtract", Operations::substract);
+        c->addItem("Multiply", Operations::multiply);
+        c->addItem("Divide", Operations::divide);
+        c->setSelectedId(Operations::add);
+        c->onChange = [this]
+        { operationChanged(); };
+        return c;
+    }
+    void operationChanged()
+    {
+        //  state = &states[(Operations)c->getSelectedId()];
+        switch (c->getSelectedId())
+        {
+        case Operations::add:
+            state = states[Operations::add];
+            break;
+        case Operations::substract:
+            state = states[Operations::substract];
+            break;
+        case Operations::multiply:
+            state = states[Operations::multiply];
+            break;
+        case Operations::divide:
+            state = states[Operations::divide];
+            break;
+        }
+    };
+    std::unordered_map<Operations, MathAudioSource::State *> states;
+    void valueChanged() override
+    {
+        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::number_out]))
+        {
+            Data source = state->operation(val1, val2);
+            input->node->trigger(source, input);
+        }
+    };
+
+private:
+    juce::ComboBox *c;
+    MathAudioSource::State *state;
+
+    float val1 = 0;
+    float val2 = 0;
+    float res;
+
+    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    {
+        if (pin != nullptr)
+        {
+            if (float f = std::any_cast<float>(data))
+            {
+                if (pin == inputs[InputKeys::number_1])
+                {
+                    val1 = f;
+                    ((NumberInput *)internals[InputKeys::number_1])->update();
+                }
+                else if (pin == inputs[InputKeys::number_2])
+                {
+                    val2 = f;
+                    ((NumberInput *)internals[InputKeys::number_2])->update();
+                }
+            }
+        }
+
+        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::number_out]))
+        {
+            Data source = state->operation(val1, val2);
+            input->node->trigger(source, input);
+        }
     }
 };

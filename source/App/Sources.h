@@ -372,9 +372,15 @@ public:
     StateHolder *stateholder;
 };
 
-class TriggeringSource : public juce::Timer
+class TriggeringSource : public StartableSource
 {
-    TriggeringSource()
+public:
+    class Listener
+    {
+    public:
+        virtual void onTrigger(float amplitude) = 0;
+    };
+    TriggeringSource(Listener &l) : listener(l)
     {
         source = nullptr;
     };
@@ -382,20 +388,56 @@ class TriggeringSource : public juce::Timer
     {
         source = s;
     }
-    void StartTimer()
+    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
     {
+        if (source == nullptr)
+            return;
+        source->prepareToPlay(samplesPerBlockExpected, sampleRate);
+    }
+    void releaseResources() override
+    {
+        if (source == nullptr)
+            return;
+        source->releaseResources();
+    }
+    void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
+    {
+        if (source == nullptr)
+        {
+            bufferToFill.clearActiveBufferRegion();
+            return;
+        }
+
+        // temp.setSize(juce::jmax(1, bufferToFill.buffer->getNumChannels()),
+        n = n + bufferToFill.buffer->getNumSamples();
+
+        // source->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp, 0, bufferToFill.numSamples));
+        // auto buffer1 = temp.getReadPointer(0, bufferToFill.startSample);
+        // float number = buffer1[0];
+        source->getNextAudioBlock(bufferToFill);
+
+        if (n >= 48000 / 400)
+        {
+            n = 0;
+            listener.onTrigger(bufferToFill.buffer->getReadPointer(0)[0]);
+        }
+    }
+    void Start() override
+    {
+        if (source == nullptr)
+            return;
         source->Start();
     }
-
-    void timerCallback() override
+    void Stop() override
     {
-        source->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp, 0, HZ));
-        auto buffer = temp.getReadPointer(1);
-        buffer[0];
+        if (source == nullptr)
+            return;
+        source->Stop();
     }
 
 private:
     StartableSource *source;
-    int HZ = 400;
     juce::AudioBuffer<float> temp;
+    Listener &listener;
+    int n = 0;
 };

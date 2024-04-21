@@ -67,6 +67,10 @@ public:
         i.push_back(new Item("Audio Effects", std::vector<Item *>({new ItemWithNode("Reverb", std::vector<Item *>(), new NodeFactory<ReverbNode>)})));
         i.push_back(new ItemWithNode("Speaker", std::vector<Item *>(), new NodeFactory<SpeakerNode>));
         i.push_back(new ItemWithNode("Audio Math", std::vector<Item *>(), new NodeFactory<AudioMathNode>));
+        i.push_back(new ItemWithNode("Number Math", std::vector<Item *>(), new NodeFactory<NumberMathNode>));
+
+        i.push_back(new ItemWithNode("Amplitude Trigger", std::vector<Item *>(), new NodeFactory<AudioToNumberNode>));
+
         return i;
     }
 };

@@ -66,7 +66,7 @@ public:
         {
             if (graph->getInputConnectionsOfNode(id).size() == 0)
             {
-                n->triggerAsync(Data(true), nullptr);
+                n->trigger(d, nullptr);
             }
         };
     }
@@ -83,6 +83,7 @@ public:
     }
 
 private:
+    Data d;
     juce::TextButton play_button;
     juce::TextButton stop_button;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SoundResult);
