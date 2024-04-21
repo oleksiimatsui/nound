@@ -13,8 +13,9 @@ public:
     juce::Colour nodeText;
     juce::Colour pinColor;
     juce::Colour nodeInputColor;
-    juce::Colour controlPinColor;
+    juce::Colour numberPinColor;
     juce::Colour soundPinColor;
+    juce::Colour wavePinColor;
     juce::Colour connectionsColor;
     juce::Colour selectedConnectionColor;
     juce::Colour selectedNodeBorderColor;
@@ -38,8 +39,9 @@ public:
         nodeColor = juce::Colour::fromRGBA(58, 59, 67, 0.72 * 255);
         nodeHeaderColor = juce::Colour::fromRGB(47, 72, 119);
         nodeInputColor = juce::Colour::fromRGB(217, 217, 217);
-        controlPinColor = juce::Colour::fromRGB(109, 211, 255);
+        numberPinColor = juce::Colour::fromRGB(109, 211, 255);
         soundPinColor = juce::Colour::fromRGB(217, 255, 138);
+        wavePinColor = juce::Colour::fromRGB(226, 109, 255);
         pinColor = juce::Colour::fromRGB(173, 255, 0);
         nodeTextColor = juce::Colour::fromRGB(245, 245, 245);
         selectedConnectionColor = juce::Colour::fromRGB(255, 255, 255);

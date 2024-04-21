@@ -6,10 +6,11 @@
 #include <stdexcept>
 #include <future>
 
-enum PinType
+enum class PinType
 {
     Audio,
-    Number
+    Number,
+    Waveform
 };
 class Node;
 class ConnectionBuilder;

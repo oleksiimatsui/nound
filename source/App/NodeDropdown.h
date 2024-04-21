@@ -60,16 +60,19 @@ public:
         std::vector<Item *> i;
 
         // i.push_back(new Item("Triggers", std::vector<Item *>({new ItemWithNode("Start", std::vector<Item *>(), new NodeFactory<StartNode>), new ItemWithNode("Wait", std::vector<Item *>(), new NodeFactory<WaitNode>)})));
+
+        i.push_back(new ItemWithNode("Speaker", std::vector<Item *>(), new NodeFactory<OutputNode>));
+        i.push_back(new Item("Waveforms", std::vector<Item *>(
+                                              {new ItemWithNode("Waveform", std::vector<Item *>(), new NodeFactory<WaveformNode>)})));
         i.push_back(new Item("Audio Input", std::vector<Item *>(
                                                 {new ItemWithNode("File Reader", std::vector<Item *>(), new NodeFactory<FileReader>),
                                                  new ItemWithNode("Random", std::vector<Item *>(), new NodeFactory<RandomNode>),
-                                                 new ItemWithNode("Sine", std::vector<Item *>(), new NodeFactory<SineNode>)})));
-        i.push_back(new Item("Audio Effects", std::vector<Item *>({new ItemWithNode("Reverb", std::vector<Item *>(), new NodeFactory<ReverbNode>)})));
-        i.push_back(new ItemWithNode("Speaker", std::vector<Item *>(), new NodeFactory<OutputNode>));
+                                                 new ItemWithNode("Sine", std::vector<Item *>(), new NodeFactory<OscillatorNode>)})));
+        i.push_back(new Item("Audio Effects", std::vector<Item *>(
+                                                  {new ItemWithNode("Reverb", std::vector<Item *>(), new NodeFactory<ReverbNode>),
+                                                   new ItemWithNode("FM", std::vector<Item *>(), new NodeFactory<FMNode>)})));
         i.push_back(new ItemWithNode("Audio Math", std::vector<Item *>(), new NodeFactory<AudioMathNode>));
         i.push_back(new ItemWithNode("Number Math", std::vector<Item *>(), new NodeFactory<NumberMathNode>));
-
-        i.push_back(new ItemWithNode("Amplitude Trigger", std::vector<Item *>(), new NodeFactory<AudioToNumberNode>));
 
         return i;
     }

@@ -1,6 +1,73 @@
 #pragma once
 #include <JuceHeader.h>
 
+template <class T>
+class ValueHolder
+{
+public:
+    virtual T *getState() = 0;
+};
+
+class Waveform
+{
+public:
+    virtual float get(float x)
+    {
+        return 0;
+    }
+};
+class Sine : public Waveform
+{
+public:
+    float get(float x) override
+    {
+        return (float)std::sin(x);
+    }
+};
+class Square : public Waveform
+{
+public:
+    float get(float x) override
+    {
+        if (x > juce::MathConstants<float>::pi)
+        {
+            return -1;
+        }
+        else
+        {
+            return 1;
+        }
+    }
+};
+class Sawtooth : public Waveform
+{
+public:
+    float get(float x) override
+    {
+        if (x > juce::MathConstants<float>::pi)
+            return juce::jmap(x, juce::MathConstants<float>::pi, 2.0f * juce::MathConstants<float>::pi, -1.0f, 0.0f);
+        else
+            return juce::jmap(x, 0.0f, juce::MathConstants<float>::pi, 0.0f, 1.0f);
+    }
+};
+class Triangle : public Waveform
+{
+public:
+    float get(float x) override
+    {
+        return (x >= juce::MathConstants<float>::twoPi) ? juce::jmap(x,
+                                                                     (juce::MathConstants<float>::pi),
+                                                                     (juce::MathConstants<float>::twoPi),
+                                                                     (-1.0f),
+                                                                     (1.0f))
+                                                        : juce::jmap(x,
+                                                                     (0.0f),
+                                                                     (juce::MathConstants<float>::pi),
+                                                                     (1.0f),
+                                                                     (-1.0f));
+    }
+};
+
 class StartableSource : public juce::AudioSource
 {
 public:
@@ -9,43 +76,6 @@ public:
     virtual void Stop() = 0;
 
 private:
-};
-
-class ReverbSource : public StartableSource
-{
-public:
-    ReverbSource()
-    {
-        source = nullptr;
-        r = nullptr;
-    }
-    void setSource(StartableSource *s)
-    {
-        source = s;
-        r = new juce::ReverbAudioSource(s, false);
-    }
-    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
-    {
-        r->prepareToPlay(samplesPerBlockExpected, sampleRate);
-    }
-    void releaseResources() override
-    {
-        r->releaseResources();
-    }
-    void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
-    {
-        r->getNextAudioBlock(bufferToFill);
-    };
-    void Start() override
-    {
-        source->Start();
-    };
-    void Stop() override
-    {
-        source->Stop();
-    };
-    StartableSource *source;
-    juce::ReverbAudioSource *r;
 };
 
 class SoundOutputSource : public StartableSource
@@ -116,6 +146,43 @@ private:
     StartableSource *source;
     juce::AudioDeviceManager deviceManager;
     juce::AudioSourcePlayer audioSourcePlayer;
+};
+
+class ReverbSource : public StartableSource
+{
+public:
+    ReverbSource()
+    {
+        source = nullptr;
+        r = nullptr;
+    }
+    void setSource(StartableSource *s)
+    {
+        source = s;
+        r = new juce::ReverbAudioSource(s, false);
+    }
+    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
+    {
+        r->prepareToPlay(samplesPerBlockExpected, sampleRate);
+    }
+    void releaseResources() override
+    {
+        r->releaseResources();
+    }
+    void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
+    {
+        r->getNextAudioBlock(bufferToFill);
+    };
+    void Start() override
+    {
+        source->Start();
+    };
+    void Stop() override
+    {
+        source->Stop();
+    };
+    StartableSource *source;
+    juce::ReverbAudioSource *r;
 };
 
 class FileSource : public StartableSource
@@ -211,10 +278,10 @@ public:
     juce::Random random;
 };
 
-class SineSource : public StartableSource
+class Osc : public StartableSource
 {
 public:
-    SineSource(float &f, float &p) : frequency(f), phase(p), StartableSource()
+    Osc(float &f, float &p, ValueHolder<Waveform> &w) : frequency(f), phase(p), StartableSource(), waveformHolder(w)
     {
     }
 
@@ -238,11 +305,18 @@ public:
                 {
                     n = 0;
                 }
-                auto currentSample = (float)std::sin(2.0f * juce::MathConstants<float>::pi * frequency * period * n + phase);
+                auto radians = 2.0f * juce::MathConstants<float>::pi * frequency * period * n + phase;
+
+                if (radians >= 2.0f * juce::MathConstants<float>::pi)
+                    radians = std::fmod(radians, 2.0f * juce::MathConstants<float>::pi);
+
+                jassert(radians >= 0 && radians <= 2.0f * juce::MathConstants<float>::pi);
+                auto currentSample = waveformHolder.getState()->get(radians);
                 n++;
                 buffer[sample] = currentSample;
             }
         }
+        std::cout << n << std::endl;
     }
     void Start() override
     {
@@ -255,6 +329,7 @@ public:
     float period = 0.0;
     int n = 0;
     double sampleRate = 0;
+    ValueHolder<Waveform> &waveformHolder;
 };
 
 class MathAudioSource : public StartableSource
@@ -300,11 +375,7 @@ public:
             return a / b;
         }
     };
-    class StateHolder
-    {
-    public:
-        virtual State *getState() = 0;
-    };
+
     MathAudioSource()
     {
         s1 = nullptr;
@@ -369,75 +440,82 @@ public:
     StartableSource *s2;
     juce::AudioBuffer<float> temp1;
     juce::AudioBuffer<float> temp2;
-    StateHolder *stateholder;
+    ValueHolder<State> *stateholder;
 };
 
-class TriggeringSource : public StartableSource
+class FM : public StartableSource
 {
 public:
-    class Listener
+    FM(float &f, float &d, StartableSource *source) : frequency(f), depth(d), StartableSource()
     {
-    public:
-        virtual void onTrigger(float amplitude) = 0;
-    };
-    TriggeringSource(Listener &l) : listener(l)
-    {
-        source = nullptr;
+        modulator = source;
     };
     void setSource(StartableSource *s)
     {
-        source = s;
+        modulator = s;
     }
-    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
+    void prepareToPlay(int samplesPerBlockExpected, double _sampleRate) override
     {
-        if (source == nullptr)
+        if (modulator == nullptr)
             return;
-        source->prepareToPlay(samplesPerBlockExpected, sampleRate);
+        modulator->prepareToPlay(samplesPerBlockExpected, _sampleRate);
+        sampleRate = _sampleRate;
+        period = 1.0f / sampleRate;
     }
     void releaseResources() override
     {
-        if (source == nullptr)
+        if (modulator == nullptr)
             return;
-        source->releaseResources();
+        modulator->releaseResources();
     }
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
-        if (source == nullptr)
+        if (modulator == nullptr)
         {
             bufferToFill.clearActiveBufferRegion();
             return;
         }
-
-        // temp.setSize(juce::jmax(1, bufferToFill.buffer->getNumChannels()),
-        n = n + bufferToFill.buffer->getNumSamples();
-
-        // source->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp, 0, bufferToFill.numSamples));
-        // auto buffer1 = temp.getReadPointer(0, bufferToFill.startSample);
-        // float number = buffer1[0];
-        source->getNextAudioBlock(bufferToFill);
-
-        if (n >= 48000 / 400)
+        temp.setSize(juce::jmax(1, bufferToFill.buffer->getNumChannels()),
+                     bufferToFill.buffer->getNumSamples());
+        if (n >= std::numeric_limits<int>::max())
         {
             n = 0;
-            listener.onTrigger(bufferToFill.buffer->getReadPointer(0)[0]);
+        }
+        for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+        {
+            modulator->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp, 0, bufferToFill.numSamples));
+            auto buffer1 = temp.getReadPointer(channel, bufferToFill.startSample);
+            auto buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
+
+            for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
+            {
+                //   float s1 = (float)std::sin(2.0f * juce::MathConstants<float>::pi * 440 * period * n);
+                auto f = frequency + buffer1[sample] * depth;
+
+                auto currentSample = (float)std::sin(2.0f * juce::MathConstants<float>::pi * f * period * n);
+                buffer[sample] = currentSample;
+                n++;
+            }
         }
     }
     void Start() override
     {
-        if (source == nullptr)
+        if (modulator == nullptr)
             return;
-        source->Start();
+        modulator->Start();
     }
     void Stop() override
     {
-        if (source == nullptr)
+        if (modulator == nullptr)
             return;
-        source->Stop();
+        modulator->Stop();
     }
 
 private:
-    StartableSource *source;
+    StartableSource *modulator;
     juce::AudioBuffer<float> temp;
-    Listener &listener;
+    float &frequency, &depth;
+    float period = 0.0;
     int n = 0;
+    double sampleRate = 0;
 };
