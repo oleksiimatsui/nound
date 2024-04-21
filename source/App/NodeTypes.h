@@ -8,43 +8,14 @@
 #include "Components.h"
 #include "Sources.h"
 
-// class StartNode : public EditorNode
-// {
-// public:
-//     enum OutputKeys
-//     {
-
-//     };
-//     StartNode() : EditorNode()
-//     {
-//         header = "Start";
-//     };
-//     juce::Component *getInternal() override
-//     {
-//         return nullptr;
-//     }
-
-// private:
-//     void trigger(Data &data, [[maybe_unused]] Input *pin) override
-//     {
-//         for (auto &[_, p] : outputs)
-//         {
-//             for (auto &input : graph->getInputsOfOutput(p))
-//             {
-//                 input->node->trigger(data, input);
-//             }
-//         }
-//     }
-// };
-
-class SpeakerNode : public EditorNode
+class OutputNode : public EditorNode
 {
 public:
     enum InputKeys
     {
         audio_
     };
-    SpeakerNode() : EditorNode()
+    OutputNode() : EditorNode()
     {
         header = "Speaker";
         inputs[InputKeys::audio_] = new Input(InputKeys::audio_, "audio", PinType::Audio, this);
@@ -53,16 +24,17 @@ public:
     {
         return nullptr;
     }
-    SoundOutputSource source;
+    // SoundOutputSource source;
+    StartableSource *result;
 
 private:
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
         if (pin == inputs[InputKeys::audio_])
         {
-            StartableSource *f = std::any_cast<StartableSource *>(data);
-            source.setSource(f);
-            source.Start();
+            result = std::any_cast<StartableSource *>(data);
+            //  source.setSource(f);
+            //  source.Start();
         }
     }
 };

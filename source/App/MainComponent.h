@@ -69,23 +69,26 @@ public:
                 n->trigger(d, nullptr);
             }
         };
+        for (auto &[id, n] : graph->getNodes())
+        {
+            if (auto out = dynamic_cast<OutputNode *>(n))
+            {
+                player.setSource(out->result);
+                player.Start();
+            }
+        };
     }
     void stop()
     {
         auto graph = GraphProvider::getGraph();
-        for (auto &[id, n] : graph->getNodes())
-        {
-            if (auto out = dynamic_cast<SpeakerNode *>(n))
-            {
-                out->source.Stop();
-            }
-        };
+        player.Stop();
     }
 
 private:
     Data d;
     juce::TextButton play_button;
     juce::TextButton stop_button;
+    SoundOutputSource player;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SoundResult);
 };
 

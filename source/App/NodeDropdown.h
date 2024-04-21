@@ -65,7 +65,7 @@ public:
                                                  new ItemWithNode("Random", std::vector<Item *>(), new NodeFactory<RandomNode>),
                                                  new ItemWithNode("Sine", std::vector<Item *>(), new NodeFactory<SineNode>)})));
         i.push_back(new Item("Audio Effects", std::vector<Item *>({new ItemWithNode("Reverb", std::vector<Item *>(), new NodeFactory<ReverbNode>)})));
-        i.push_back(new ItemWithNode("Speaker", std::vector<Item *>(), new NodeFactory<SpeakerNode>));
+        i.push_back(new ItemWithNode("Speaker", std::vector<Item *>(), new NodeFactory<OutputNode>));
         i.push_back(new ItemWithNode("Audio Math", std::vector<Item *>(), new NodeFactory<AudioMathNode>));
         i.push_back(new ItemWithNode("Number Math", std::vector<Item *>(), new NodeFactory<NumberMathNode>));
 
