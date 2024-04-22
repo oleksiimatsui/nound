@@ -20,7 +20,7 @@ target_sources(App
     NodeTypes.h
     NodeDropdown.h
     Components.h 
-
+    Functions.h
     AppTheme.cpp
     Main.cpp
     GraphProvider.cpp

@@ -25,7 +25,7 @@ const std::string NodeNames::OutputNode = "Output";
 const std::string NodeNames::FileReader = "File Reader";
 const std::string NodeNames::ReverbNode = "Reverb";
 const std::string NodeNames::RandomNode = "Random";
-const std::string NodeNames::WaveformNode = "Waveform";
+const std::string NodeNames::WaveformNode = "Basic waveform";
 const std::string NodeNames::OscillatorNode = "Oscilator";
 const std::string NodeNames::AudioMathNode = "Audio Math";
 const std::string NodeNames::FMNode = "Audio FM";
@@ -236,7 +236,7 @@ private:
     }
 };
 
-class WaveformNode : public EditorNode, ValueHolder<Waveform>
+class WaveformNode : public EditorNode, ValueHolder<F1>
 {
 public:
     enum InputKeys
@@ -255,7 +255,7 @@ public:
     };
     void operationChanged()
     {
-        Waveform *new_wave;
+        F1 *new_wave;
         switch (c->getSelectedId())
         {
         case Operations::sine:
@@ -277,7 +277,7 @@ public:
     {
         header = NodeNames::WaveformNode;
         waveform = new Sine();
-        registerOutput(OutputKeys::wave_out, "wave", PinType::Waveform);
+        registerOutput(OutputKeys::wave_out, "wave", PinType::Function);
         c = new juce::ComboBox();
         c->setSize(1000, 20);
         c->addItem("Sine", Operations::sine);
@@ -292,8 +292,8 @@ public:
     {
         return c;
     }
-    Waveform *waveform;
-    Waveform *getState() override
+    F1 *waveform;
+    F1 *getState() override
     {
         return waveform;
     }
@@ -304,13 +304,13 @@ private:
     {
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::wave_out]))
         {
-            Data source = (ValueHolder<Waveform> *)(this);
+            Data source = (ValueHolder<F1> *)(this);
             input->node->trigger(source, input);
         }
     }
 };
 
-class OscillatorNode : public EditorNode, NumberInput::Listener, ValueHolder<Waveform>
+class OscillatorNode : public EditorNode, NumberInput::Listener, ValueHolder<F1>
 {
 public:
     enum InputKeys
@@ -324,7 +324,7 @@ public:
     {
         audio_out
     };
-    Waveform *getState()
+    F1 *getState()
     {
         return new Sine();
     }
@@ -334,7 +334,7 @@ public:
         osc = this;
         header = NodeNames::OscillatorNode;
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
-        registerInput(InputKeys::osc_, "wave", PinType::Waveform);
+        registerInput(InputKeys::osc_, "wave", PinType::Function);
         registerInputWithComponent(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)));
         registerInputWithComponent(InputKeys::phase_, "phase", PinType::Number, new NumberInput(this, 0, 5000, &(phase)));
         registerInputWithComponent(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)));
@@ -349,7 +349,7 @@ private:
     float frequency = 440;
     float phase = 0;
     float t = 1;
-    ValueHolder<Waveform> *osc;
+    ValueHolder<F1> *osc;
 
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
@@ -365,7 +365,7 @@ private:
         }
         if (pin == inputs[InputKeys::osc_])
         {
-            osc = std::any_cast<ValueHolder<Waveform> *>(data);
+            osc = std::any_cast<ValueHolder<F1> *>(data);
         }
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
         {
@@ -501,7 +501,7 @@ public:
         header = NodeNames::FMNode;
         registerInput(InputKeys::modulator_, "modulator", PinType::Audio);
         registerInputWithComponent(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)));
-        registerInput(InputKeys::wave_, "waveform", PinType::Waveform);
+        registerInput(InputKeys::wave_, "waveform", PinType::Function);
         registerInputWithComponent(InputKeys::depth_, "depth", PinType::Number, new NumberInput(this, 0, 5000, &(depth)));
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
     };
@@ -516,7 +516,7 @@ private:
     StartableSource *s;
     Data datatosend;
     Vertical internal;
-    ValueHolder<Waveform> *wf = nullptr;
+    ValueHolder<F1> *wf = nullptr;
     std::vector<Input *> listeners;
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
@@ -527,7 +527,7 @@ private:
         }
         if (pin == inputs[InputKeys::wave_])
         {
-            wf = std::any_cast<ValueHolder<Waveform> *>(data);
+            wf = std::any_cast<ValueHolder<F1> *>(data);
             ((NumberInput *)internals[InputKeys::depth_])->update();
         }
         if (pin == inputs[InputKeys::depth_])

@@ -1,74 +1,12 @@
 #pragma once
 #include <JuceHeader.h>
+#include "Functions.h"
 
 template <class T>
 class ValueHolder
 {
 public:
     virtual T *getState() = 0;
-};
-
-class Waveform
-{
-public:
-    virtual float get(float x)
-    {
-        return 0;
-    }
-};
-class Sine : public Waveform
-{
-public:
-    float get(float x) override
-    {
-        return (float)std::sin(x);
-    }
-};
-class Square : public Waveform
-{
-public:
-    float get(float rad) override
-    {
-        float x = std::fmod(rad, 2.0f * juce::MathConstants<float>::pi);
-        if (x > juce::MathConstants<float>::pi)
-        {
-            return -1;
-        }
-        else
-        {
-            return 1;
-        }
-    }
-};
-class Sawtooth : public Waveform
-{
-public:
-    float get(float rad) override
-    {
-        float x = std::fmod(rad, 2.0f * juce::MathConstants<float>::pi);
-        if (x > juce::MathConstants<float>::pi)
-            return juce::jmap(x, juce::MathConstants<float>::pi, 2.0f * juce::MathConstants<float>::pi, -1.0f, 0.0f);
-        else
-            return juce::jmap(x, 0.0f, juce::MathConstants<float>::pi, 0.0f, 1.0f);
-    }
-};
-class Triangle : public Waveform
-{
-public:
-    float get(float rad) override
-    {
-        float x = std::fmod(rad, 2.0f * juce::MathConstants<float>::pi);
-        return (x >= juce::MathConstants<float>::twoPi) ? juce::jmap(x,
-                                                                     (juce::MathConstants<float>::pi),
-                                                                     (juce::MathConstants<float>::twoPi),
-                                                                     (-1.0f),
-                                                                     (1.0f))
-                                                        : juce::jmap(x,
-                                                                     (0.0f),
-                                                                     (juce::MathConstants<float>::pi),
-                                                                     (1.0f),
-                                                                     (-1.0f));
-    }
 };
 
 class StartableSource : public juce::AudioSource
@@ -312,7 +250,7 @@ private:
 class Osc : public StartableSource
 {
 public:
-    Osc(float t, float &f, float &p, ValueHolder<Waveform> &w) : time(t), frequency(f), phase(p), StartableSource(), waveformHolder(w), samples_count(0), n(0), period(0), sampleRate(0), N(0)
+    Osc(float t, float &f, float &p, ValueHolder<F1> &w) : time(t), frequency(f), phase(p), StartableSource(), waveformHolder(w), samples_count(0), n(0), period(0), sampleRate(0), N(0)
     {
     }
 
@@ -363,7 +301,7 @@ public:
     double sampleRate;
     float time;
     int samples_count;
-    ValueHolder<Waveform> &waveformHolder;
+    ValueHolder<F1> &waveformHolder;
 };
 
 class MathAudioSource : public StartableSource
@@ -485,7 +423,7 @@ public:
 class FM : public StartableSource
 {
 public:
-    FM(float &f, float &d, StartableSource *source, ValueHolder<Waveform> *wf) : frequency(f), depth(d), StartableSource(), wfh(wf)
+    FM(float &f, float &d, StartableSource *source, ValueHolder<F1> *wf) : frequency(f), depth(d), StartableSource(), wfh(wf)
     {
         modulator = source;
     };
@@ -554,7 +492,7 @@ public:
 
 private:
     StartableSource *modulator;
-    ValueHolder<Waveform> *wfh;
+    ValueHolder<F1> *wfh;
     juce::AudioBuffer<float> temp;
     float &frequency, &depth;
     float period = 0.0;

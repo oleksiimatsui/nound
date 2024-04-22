@@ -10,7 +10,7 @@ enum class PinType
 {
     Audio,
     Number,
-    Waveform
+    Function
 };
 class Node;
 class ConnectionBuilder;

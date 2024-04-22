@@ -33,7 +33,7 @@ public:
         case PinType::Number:
             res = theme->numberPinColor;
             break;
-        case PinType::Waveform:
+        case PinType::Function:
             res = theme->wavePinColor;
             break;
         case PinType::Audio:
