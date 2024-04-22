@@ -119,7 +119,7 @@ public:
     }
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
-        if (source == nullptr || !source->isPlaying())
+        if (source == nullptr)
         {
             bufferToFill.clearActiveBufferRegion();
             //   Stop();
@@ -312,7 +312,7 @@ private:
 class Osc : public StartableSource
 {
 public:
-    Osc(float t, float &f, float &p, ValueHolder<Waveform> &w) : time(t), frequency(f), phase(p), StartableSource(), waveformHolder(w), samples_count(0), n(0), period(0), sampleRate(0)
+    Osc(float t, float &f, float &p, ValueHolder<Waveform> &w) : time(t), frequency(f), phase(p), StartableSource(), waveformHolder(w), samples_count(0), n(0), period(0), sampleRate(0), N(0)
     {
     }
 
@@ -338,10 +338,11 @@ public:
                 buffer[sample] = currentSample;
             }
             n++;
-            // if (frequency * period * n >= 1)
-            // {
-            //     n = 0;
-            // }
+            N++;
+            if (frequency * period * n >= 1)
+            {
+                n = 0;
+            }
         }
     }
     void Start() override
@@ -352,12 +353,13 @@ public:
     }
     bool isPlaying() override
     {
-        return n <= samples_count;
+        return N <= samples_count;
     }
     float &frequency;
     float &phase;
     float period;
     int n;
+    int N;
     double sampleRate;
     float time;
     int samples_count;
@@ -468,10 +470,12 @@ public:
         s1->Stop();
         s2->Stop();
     }
-    bool isPlaying()
+
+    bool isPlaying() override
     {
-        return s1->isPlaying();
+        return true;
     }
+
     StartableSource *s1;
     StartableSource *s2;
     juce::AudioBuffer<float> temp1;
