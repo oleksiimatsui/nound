@@ -8,6 +8,30 @@
 #include "Components.h"
 #include "Sources.h"
 
+struct NodeNames
+{
+    static const std::string OutputNode;
+    static const std::string FileReader;
+    static const std::string ReverbNode;
+    static const std::string RandomNode;
+    static const std::string WaveformNode;
+    static const std::string OscillatorNode;
+    static const std::string AudioMathNode;
+    static const std::string FMNode;
+    static const std::string NumberMathNode;
+    static const std::string Concatenate;
+};
+const std::string NodeNames::OutputNode = "Output";
+const std::string NodeNames::FileReader = "File Reader";
+const std::string NodeNames::ReverbNode = "Reverb";
+const std::string NodeNames::RandomNode = "Random";
+const std::string NodeNames::WaveformNode = "Waveform";
+const std::string NodeNames::OscillatorNode = "Oscilator";
+const std::string NodeNames::AudioMathNode = "Audio Math";
+const std::string NodeNames::FMNode = "Audio FM";
+const std::string NodeNames::NumberMathNode = "Number Math";
+const std::string NodeNames::Concatenate = "Concatenate";
+
 class OutputNode : public EditorNode
 {
 public:
@@ -17,7 +41,7 @@ public:
     };
     OutputNode() : EditorNode()
     {
-        header = "Speaker";
+        header = NodeNames::OutputNode;
         inputs[InputKeys::audio_] = new Input(InputKeys::audio_, "audio", PinType::Audio, this);
     };
     juce::Component *getInternal() override
@@ -54,7 +78,7 @@ public:
     {
         currentAudioFile = nullptr;
         internal = new FileInput(this);
-        header = "File Reader";
+        header = NodeNames::FileReader;
         outputs[OutputKeys::audio_] = new Output(OutputKeys::audio_, "audio", PinType::Audio, this);
     };
     juce::Component *getInternal() override
@@ -126,7 +150,7 @@ public:
     {
         int i = 0;
         int h = ThemeProvider::getCurrentTheme()->nodeTextHeight;
-        header = "Reverb";
+        header = NodeNames::ReverbNode;
         registerInput(InputKeys::audio_in, "audio", PinType::Audio);
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
         registerInputWithComponent(InputKeys::width, "width", PinType::Number, new NumberInput(this, 0, 1, &(p.width)));
@@ -185,7 +209,7 @@ public:
     };
     RandomNode()
     {
-        header = "Random";
+        NodeNames::RandomNode;
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
         registerInputWithComponent(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)));
     };
@@ -251,7 +275,7 @@ public:
     };
     WaveformNode()
     {
-        header = "Waveform";
+        header = NodeNames::WaveformNode;
         waveform = new Sine();
         registerOutput(OutputKeys::wave_out, "wave", PinType::Waveform);
         c = new juce::ComboBox();
@@ -308,7 +332,7 @@ public:
     OscillatorNode() : EditorNode()
     {
         osc = this;
-        header = "Oscillator";
+        header = NodeNames::OscillatorNode;
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
         registerInput(InputKeys::osc_, "wave", PinType::Waveform);
         registerInputWithComponent(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)));
@@ -374,7 +398,7 @@ public:
         s1 = nullptr;
         s2 = nullptr;
         c = nullptr;
-        header = "Audio Math";
+        header = NodeNames::AudioMathNode;
         registerInput(InputKeys::audio_1, "audio", PinType::Audio);
         registerInput(InputKeys::audio_2, "audio", PinType::Audio);
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
@@ -474,7 +498,7 @@ public:
     };
     FMNode()
     {
-        header = "Frequency modulator";
+        header = NodeNames::FMNode;
         registerInput(InputKeys::modulator_, "modulator", PinType::Audio);
         registerInputWithComponent(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)));
         registerInput(InputKeys::wave_, "waveform", PinType::Waveform);
@@ -548,7 +572,7 @@ public:
         states[Operations::substract] = new MathAudioSource::Substract();
         states[Operations::multiply] = new MathAudioSource::Multiply();
         c = nullptr;
-        header = "Number Math";
+        header = NodeNames::NumberMathNode;
         registerInputWithComponent(InputKeys::number_1, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val1)));
         registerInputWithComponent(InputKeys::number_2, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val2)));
         registerOutput(OutputKeys::number_out, "number", PinType::Number);
@@ -653,7 +677,7 @@ public:
     {
         s1 = nullptr;
         s2 = nullptr;
-        header = "Audio Concatenate";
+        header = NodeNames::Concatenate;
         registerInput(InputKeys::audio_1, "audio", PinType::Audio);
         registerInput(InputKeys::audio_2, "audio", PinType::Audio);
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
