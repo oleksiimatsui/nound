@@ -27,8 +27,9 @@ public:
 class Square : public Waveform
 {
 public:
-    float get(float x) override
+    float get(float rad) override
     {
+        float x = std::fmod(rad, 2.0f * juce::MathConstants<float>::pi);
         if (x > juce::MathConstants<float>::pi)
         {
             return -1;
@@ -42,8 +43,9 @@ public:
 class Sawtooth : public Waveform
 {
 public:
-    float get(float x) override
+    float get(float rad) override
     {
+        float x = std::fmod(rad, 2.0f * juce::MathConstants<float>::pi);
         if (x > juce::MathConstants<float>::pi)
             return juce::jmap(x, juce::MathConstants<float>::pi, 2.0f * juce::MathConstants<float>::pi, -1.0f, 0.0f);
         else
@@ -53,8 +55,9 @@ public:
 class Triangle : public Waveform
 {
 public:
-    float get(float x) override
+    float get(float rad) override
     {
+        float x = std::fmod(rad, 2.0f * juce::MathConstants<float>::pi);
         return (x >= juce::MathConstants<float>::twoPi) ? juce::jmap(x,
                                                                      (juce::MathConstants<float>::pi),
                                                                      (juce::MathConstants<float>::twoPi),
@@ -128,7 +131,7 @@ public:
         if (source == nullptr)
             return;
 
-        setAudioChannels(0, 1);
+        setAudioChannels(0, 2);
         source->Start();
     }
     void Stop() override
@@ -296,27 +299,28 @@ public:
 
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
-        for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+        for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
         {
-            auto *buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
-            for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
+            if (n >= std::numeric_limits<int>::max())
             {
-                if (n >= std::numeric_limits<int>::max())
-                {
-                    n = 0;
-                }
-                auto radians = 2.0f * juce::MathConstants<float>::pi * frequency * period * n + phase;
+                n = 0;
+            }
+            auto radians = 2.0f * juce::MathConstants<float>::pi * frequency * period * n + phase;
+            auto currentSample = waveformHolder.getState()->get(radians);
 
-                if (radians >= 2.0f * juce::MathConstants<float>::pi)
-                    radians = std::fmod(radians, 2.0f * juce::MathConstants<float>::pi);
-
-                jassert(radians >= 0 && radians <= 2.0f * juce::MathConstants<float>::pi);
-                auto currentSample = waveformHolder.getState()->get(radians);
-                n++;
+            for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+            {
+                auto *buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
                 buffer[sample] = currentSample;
             }
+
+            n++;
+
+            if (frequency * period * n >= 1)
+            {
+                n = 0;
+            }
         }
-        std::cout << n << std::endl;
     }
     void Start() override
     {
@@ -446,7 +450,7 @@ public:
 class FM : public StartableSource
 {
 public:
-    FM(float &f, float &d, StartableSource *source) : frequency(f), depth(d), StartableSource()
+    FM(float &f, float &d, StartableSource *source, ValueHolder<Waveform> *wf) : frequency(f), depth(d), StartableSource(), wfh(wf)
     {
         modulator = source;
     };
@@ -477,24 +481,22 @@ public:
         }
         temp.setSize(juce::jmax(1, bufferToFill.buffer->getNumChannels()),
                      bufferToFill.buffer->getNumSamples());
-        if (n >= std::numeric_limits<int>::max())
-        {
-            n = 0;
-        }
-        for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
-        {
-            modulator->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp, 0, bufferToFill.numSamples));
-            auto buffer1 = temp.getReadPointer(channel, bufferToFill.startSample);
-            auto buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
+        modulator->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp, 0, bufferToFill.numSamples));
 
-            for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
+        for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
+        {
+            for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
             {
-                //   float s1 = (float)std::sin(2.0f * juce::MathConstants<float>::pi * 440 * period * n);
-                auto f = frequency + buffer1[sample] * depth;
-
-                auto currentSample = (float)std::sin(2.0f * juce::MathConstants<float>::pi * f * period * n);
+                auto buffer1 = temp.getReadPointer(channel, bufferToFill.startSample);
+                float f = frequency + buffer1[sample] * depth;
+                auto currentSample = wfh->getState()->get(2.0f * juce::MathConstants<float>::pi * f * period * n);
+                auto buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
                 buffer[sample] = currentSample;
-                n++;
+            }
+            n++;
+            if (frequency * period * n >= 1)
+            {
+                n = 0;
             }
         }
     }
@@ -513,6 +515,7 @@ public:
 
 private:
     StartableSource *modulator;
+    ValueHolder<Waveform> *wfh;
     juce::AudioBuffer<float> temp;
     float &frequency, &depth;
     float period = 0.0;

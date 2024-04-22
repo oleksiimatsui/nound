@@ -451,7 +451,8 @@ public:
     {
         modulator_,
         frequency_,
-        depth_
+        depth_,
+        wave_
     };
     enum OutputKeys
     {
@@ -462,6 +463,7 @@ public:
         header = "Frequency modulator";
         registerInput(InputKeys::modulator_, "modulator", PinType::Audio);
         registerInputWithComponent(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)));
+        registerInput(InputKeys::wave_, "waveform", PinType::Waveform);
         registerInputWithComponent(InputKeys::depth_, "depth", PinType::Number, new NumberInput(this, 0, 5000, &(depth)));
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
     };
@@ -476,6 +478,7 @@ private:
     StartableSource *s;
     Data datatosend;
     Vertical internal;
+    ValueHolder<Waveform> *wf = nullptr;
     std::vector<Input *> listeners;
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
@@ -483,6 +486,11 @@ private:
         {
             frequency = std::any_cast<float>(data);
             ((NumberInput *)internals[InputKeys::frequency_])->update();
+        }
+        if (pin == inputs[InputKeys::wave_])
+        {
+            wf = std::any_cast<ValueHolder<Waveform> *>(data);
+            ((NumberInput *)internals[InputKeys::depth_])->update();
         }
         if (pin == inputs[InputKeys::depth_])
         {
@@ -500,7 +508,7 @@ private:
 
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
         {
-            auto fs = new FM(frequency, depth, s);
+            auto fs = new FM(frequency, depth, s, wf);
             Data source = (StartableSource *)(fs);
             input->node->trigger(source, input);
         }
