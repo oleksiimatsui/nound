@@ -564,6 +564,7 @@ private:
 
 class ConcatenationSource : public StartableSource
 {
+public:
     ConcatenationSource()
     {
         is_playing = false;
@@ -612,10 +613,14 @@ class ConcatenationSource : public StartableSource
     }
     void Stop() override
     {
-        // for (auto &s : sources)
-        // {
-        //     s->Stop();
-        // }
+        for (auto &s : sources)
+        {
+            s->Stop();
+        }
+    }
+    bool isPlaying()
+    {
+        return is_playing;
     }
 
     std::vector<StartableSource *> sources;

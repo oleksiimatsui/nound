@@ -65,15 +65,14 @@ public:
         i.push_back(new Item("Waveforms", std::vector<Item *>(
                                               {new ItemWithNode("Waveform", std::vector<Item *>(), new NodeFactory<WaveformNode>)})));
         i.push_back(new Item("Audio", std::vector<Item *>(
-                                          {
-                                              new ItemWithNode("File Reader", std::vector<Item *>(), new NodeFactory<FileReader>),
-                                              new ItemWithNode("Random", std::vector<Item *>(), new NodeFactory<RandomNode>),
-                                              new ItemWithNode("Osc", std::vector<Item *>(), new NodeFactory<OscillatorNode>),
-                                              new ItemWithNode("Reverb", std::vector<Item *>(), new NodeFactory<ReverbNode>),
-                                              new ItemWithNode("FM", std::vector<Item *>(), new NodeFactory<FMNode>),
-                                              new ItemWithNode("Audio Math", std::vector<Item *>(), new NodeFactory<AudioMathNode>),
-                                          })));
-        i.push_back(new ItemWithNode("Audio Math", std::vector<Item *>(), new NodeFactory<AudioMathNode>));
+                                          {new ItemWithNode("File Reader", std::vector<Item *>(), new NodeFactory<FileReader>),
+                                           new ItemWithNode("Random", std::vector<Item *>(), new NodeFactory<RandomNode>),
+                                           new ItemWithNode("Osc", std::vector<Item *>(), new NodeFactory<OscillatorNode>),
+                                           new ItemWithNode("Reverb", std::vector<Item *>(), new NodeFactory<ReverbNode>),
+                                           new ItemWithNode("FM", std::vector<Item *>(), new NodeFactory<FMNode>),
+                                           new ItemWithNode("Audio Math", std::vector<Item *>(), new NodeFactory<AudioMathNode>),
+                                           new ItemWithNode("Concatenate", std::vector<Item *>(), new NodeFactory<Concatenate>)})));
+
         i.push_back(new ItemWithNode("Number Math", std::vector<Item *>(), new NodeFactory<NumberMathNode>));
 
         return i;

@@ -636,3 +636,60 @@ private:
         }
     }
 };
+
+class Concatenate : public EditorNode
+{
+public:
+    enum InputKeys
+    {
+        audio_1,
+        audio_2
+    };
+    enum OutputKeys
+    {
+        audio_out
+    };
+    Concatenate()
+    {
+        s1 = nullptr;
+        s2 = nullptr;
+        header = "Audio Concatenate";
+        registerInput(InputKeys::audio_1, "audio", PinType::Audio);
+        registerInput(InputKeys::audio_2, "audio", PinType::Audio);
+        registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
+    };
+
+    juce::Component *getInternal() override
+    {
+        return nullptr;
+    }
+
+private:
+    StartableSource *s1;
+    StartableSource *s2;
+
+    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    {
+        if (StartableSource *f = std::any_cast<StartableSource *>(data))
+        {
+            if (pin == inputs[InputKeys::audio_1])
+            {
+                s1 = f;
+            }
+            else if (pin == inputs[InputKeys::audio_2])
+            {
+                s2 = f;
+            }
+            if (s1 != nullptr && s2 != nullptr)
+            {
+                for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
+                {
+                    auto s = new ConcatenationSource();
+                    s->sources = std::vector<StartableSource *>({s1, s2});
+                    Data source = (StartableSource *)(s);
+                    input->node->trigger(source, input);
+                }
+            }
+        }
+    }
+};
