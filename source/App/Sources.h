@@ -77,11 +77,12 @@ public:
     StartableSource(){};
     virtual void Start() = 0;
     virtual void Stop() = 0;
+    virtual bool isPlaying() = 0;
 
 private:
 };
 
-class SoundOutputSource : public StartableSource
+class SoundOutputSource : public juce::AudioSource
 {
 public:
     SoundOutputSource()
@@ -118,27 +119,26 @@ public:
     }
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
-        if (source == nullptr)
+        if (source == nullptr || !source->isPlaying())
         {
             bufferToFill.clearActiveBufferRegion();
+            //   Stop();
             return;
         }
         source->getNextAudioBlock(bufferToFill);
     };
 
-    void Start() override
+    void Start()
     {
         if (source == nullptr)
             return;
-
         setAudioChannels(0, 2);
         source->Start();
     }
-    void Stop() override
+    void Stop()
     {
         if (source == nullptr)
             return;
-
         source->Stop();
         audioSourcePlayer.setSource(nullptr);
         deviceManager.removeAudioCallback(&audioSourcePlayer);
@@ -184,6 +184,10 @@ public:
     {
         source->Stop();
     };
+    bool isPlaying() override
+    {
+        return source->isPlaying();
+    }
     StartableSource *source;
     juce::ReverbAudioSource *r;
 };
@@ -239,6 +243,10 @@ public:
     {
         transportSource.stop();
     }
+    bool isPlaying()
+    {
+        return transportSource.isPlaying();
+    }
 
     std::string path;
     juce::AudioTransportSource transportSource;
@@ -249,12 +257,16 @@ public:
 class RandomSource : public StartableSource
 {
 public:
-    RandomSource()
+    RandomSource(float _t)
     {
+        t = _t;
+        samples_count = 0;
+        n = 0;
     }
 
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
     {
+        samples_count = t * sampleRate;
         random.setSeed(0);
     }
     void releaseResources() override
@@ -262,14 +274,21 @@ public:
     }
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
-        for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+        // Fill the required number of samples with noise between -0.125 and +0.125
+        for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
         {
-            // Get a pointer to the start sample in the buffer for this audio output channel
-            auto *buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
+            for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+            {
+                auto *buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
 
-            // Fill the required number of samples with noise between -0.125 and +0.125
-            for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
                 buffer[sample] = random.nextFloat() * 0.25f - 0.125f;
+            }
+            n++;
+        }
+        if (n >= samples_count)
+        {
+            bufferToFill.clearActiveBufferRegion();
+            return;
         }
     }
     void Start() override
@@ -278,13 +297,22 @@ public:
     void Stop() override
     {
     }
+    bool isPlaying() override
+    {
+        return n < samples_count;
+    }
+
+private:
     juce::Random random;
+    float t; // time to play in seconds
+    int n;
+    int samples_count;
 };
 
 class Osc : public StartableSource
 {
 public:
-    Osc(float &f, float &p, ValueHolder<Waveform> &w) : frequency(f), phase(p), StartableSource(), waveformHolder(w)
+    Osc(float t, float &f, float &p, ValueHolder<Waveform> &w) : time(t), frequency(f), phase(p), StartableSource(), waveformHolder(w), samples_count(0), n(0), period(0), sampleRate(0)
     {
     }
 
@@ -292,6 +320,7 @@ public:
     {
         sampleRate = _sampleRate;
         period = 1.0f / sampleRate;
+        samples_count = sampleRate * time;
     }
     void releaseResources() override
     {
@@ -301,25 +330,18 @@ public:
     {
         for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
         {
-            if (n >= std::numeric_limits<int>::max())
-            {
-                n = 0;
-            }
             auto radians = 2.0f * juce::MathConstants<float>::pi * frequency * period * n + phase;
             auto currentSample = waveformHolder.getState()->get(radians);
-
             for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
             {
                 auto *buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
                 buffer[sample] = currentSample;
             }
-
             n++;
-
-            if (frequency * period * n >= 1)
-            {
-                n = 0;
-            }
+            // if (frequency * period * n >= 1)
+            // {
+            //     n = 0;
+            // }
         }
     }
     void Start() override
@@ -328,11 +350,17 @@ public:
     void Stop() override
     {
     }
+    bool isPlaying() override
+    {
+        return n <= samples_count;
+    }
     float &frequency;
     float &phase;
-    float period = 0.0;
-    int n = 0;
-    double sampleRate = 0;
+    float period;
+    int n;
+    double sampleRate;
+    float time;
+    int samples_count;
     ValueHolder<Waveform> &waveformHolder;
 };
 
@@ -440,6 +468,10 @@ public:
         s1->Stop();
         s2->Stop();
     }
+    bool isPlaying()
+    {
+        return s1->isPlaying();
+    }
     StartableSource *s1;
     StartableSource *s2;
     juce::AudioBuffer<float> temp1;
@@ -512,6 +544,10 @@ public:
             return;
         modulator->Stop();
     }
+    bool isPlaying() override
+    {
+        return modulator->isPlaying();
+    }
 
 private:
     StartableSource *modulator;
@@ -521,4 +557,68 @@ private:
     float period = 0.0;
     int n = 0;
     double sampleRate = 0;
+};
+
+class ConcatenationSource : public StartableSource
+{
+    ConcatenationSource()
+    {
+        is_playing = false;
+        currentTrack = 0;
+        numOfTracks = 0;
+    }
+    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
+    {
+        numOfTracks = sources.size();
+        for (auto &s : sources)
+        {
+            s->prepareToPlay(samplesPerBlockExpected, sampleRate);
+        }
+    }
+    void releaseResources() override
+    {
+        for (auto &s : sources)
+        {
+            s->releaseResources();
+        }
+    }
+    void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
+    {
+        auto s = sources[currentTrack];
+        if (s->isPlaying())
+        {
+            s->getNextAudioBlock(bufferToFill);
+        }
+        else if (currentTrack < numOfTracks - 1)
+        {
+            currentTrack++;
+        }
+        else
+        {
+            is_playing = false;
+            bufferToFill.clearActiveBufferRegion();
+            return;
+        }
+    };
+    void Start() override
+    {
+        if (sources.size() == 0)
+            return;
+        is_playing = true;
+        sources[0]->Start();
+    }
+    void Stop() override
+    {
+        // for (auto &s : sources)
+        // {
+        //     s->Stop();
+        // }
+    }
+
+    std::vector<StartableSource *> sources;
+
+private:
+    int numOfTracks;
+    int currentTrack;
+    bool is_playing;
 };

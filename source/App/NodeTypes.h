@@ -44,6 +44,7 @@ class FileReader : public EditorNode, public FileInputListener
 public:
     enum InputKeys
     {
+        predecessor
     };
     enum OutputKeys
     {
@@ -63,11 +64,6 @@ public:
 
     ~FileReader()
     {
-        for (auto &s : sources)
-        {
-            delete s;
-        }
-        sources.clear();
     }
     void setFile(juce::URL *resource, std::string _name) override
     {
@@ -83,6 +79,9 @@ private:
 
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
+        if (pin == inputs[InputKeys::predecessor])
+        {
+        }
         auto connection_inputs = graph->getInputsOfOutput(outputs[OutputKeys::audio_]);
         for (auto &input : connection_inputs)
         {
@@ -173,12 +172,12 @@ private:
     }
 };
 
-class RandomNode : public EditorNode
+class RandomNode : public EditorNode, NumberInput::Listener
 {
 public:
     enum InputKeys
     {
-        start
+        seconds_
     };
     enum OutputKeys
     {
@@ -188,6 +187,7 @@ public:
     {
         header = "Random";
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
+        registerInputWithComponent(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)));
     };
     juce::Component *getInternal() override
     {
@@ -195,11 +195,17 @@ public:
     }
 
 private:
+    float t;
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
+        if (pin == inputs[InputKeys::seconds_])
+        {
+            t = std::any_cast<float>(data);
+            ((NumberInput *)internals[InputKeys::seconds_])->update();
+        }
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
         {
-            auto fs = new RandomSource();
+            auto fs = new RandomSource(t);
             Data source = (StartableSource *)(fs);
             input->node->trigger(source, input);
         }
@@ -287,7 +293,8 @@ public:
     {
         frequency_,
         phase_,
-        osc_
+        osc_,
+        seconds_,
     };
     enum OutputKeys
     {
@@ -306,6 +313,7 @@ public:
         registerInput(InputKeys::osc_, "wave", PinType::Waveform);
         registerInputWithComponent(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)));
         registerInputWithComponent(InputKeys::phase_, "phase", PinType::Number, new NumberInput(this, 0, 5000, &(phase)));
+        registerInputWithComponent(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)));
     };
 
     juce::Component *getInternal() override
@@ -316,6 +324,7 @@ public:
 private:
     float frequency = 440;
     float phase = 0;
+    float t = 1;
     ValueHolder<Waveform> *osc;
 
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
@@ -325,13 +334,18 @@ private:
             frequency = std::any_cast<float>(data);
             ((NumberInput *)internals[InputKeys::frequency_])->update();
         }
+        if (pin == inputs[InputKeys::seconds_])
+        {
+            t = std::any_cast<float>(data);
+            ((NumberInput *)internals[InputKeys::seconds_])->update();
+        }
         if (pin == inputs[InputKeys::osc_])
         {
             osc = std::any_cast<ValueHolder<Waveform> *>(data);
         }
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
         {
-            auto fs = new Osc(frequency, phase, *osc);
+            auto fs = new Osc(t, frequency, phase, *osc);
             Data source = (StartableSource *)(fs);
             input->node->trigger(source, input);
         }
