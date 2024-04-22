@@ -443,11 +443,10 @@ public:
                       bufferToFill.buffer->getNumSamples());
         temp2.setSize(juce::jmax(1, bufferToFill.buffer->getNumChannels()),
                       bufferToFill.buffer->getNumSamples());
+        s1->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp1, 0, bufferToFill.numSamples));
+        s2->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp2, 0, bufferToFill.numSamples));
         for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
         {
-            s1->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp1, 0, bufferToFill.numSamples));
-            s2->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp2, 0, bufferToFill.numSamples));
-
             auto buffer1 = temp1.getReadPointer(channel, bufferToFill.startSample);
             auto buffer2 = temp2.getReadPointer(channel, bufferToFill.startSample);
 
@@ -473,7 +472,7 @@ public:
 
     bool isPlaying() override
     {
-        return true;
+        return s1->isPlaying() && s2->isPlaying();
     }
 
     StartableSource *s1;
