@@ -57,7 +57,7 @@ public:
     }
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
-        if (source == nullptr)
+        if (source == nullptr || source->isPlaying() == false)
         {
             bufferToFill.clearActiveBufferRegion();
             //   Stop();
@@ -195,7 +195,7 @@ public:
 class RandomSource : public StartableSource
 {
 public:
-    RandomSource(float _t)
+    RandomSource(double _t)
     {
         t = _t;
         samples_count = 0;
@@ -242,7 +242,7 @@ public:
 
 private:
     juce::Random random;
-    float t; // time to play in seconds
+    double t; // time to play in seconds
     int n;
     int samples_count;
 };
@@ -250,8 +250,14 @@ private:
 class Osc : public StartableSource
 {
 public:
-    Osc(float t, float &f, float &p, ValueHolder<F> &w) : time(t), frequency(f), phase(p), StartableSource(), waveformHolder(w), samples_count(0), n(0), period(0), sampleRate(0), N(0)
+    Osc(float &t, float &f, float &p, F **w) : time(t), frequency(f), phase(p), StartableSource()
     {
+        samples_count = 0;
+        n = 0;
+        period = 0;
+        N = 0;
+        sampleRate = 0;
+        waveform = w;
     }
 
     void prepareToPlay(int samplesPerBlockExpected, double _sampleRate) override
@@ -268,8 +274,8 @@ public:
     {
         for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
         {
-            auto radians = 2.0f * juce::MathConstants<float>::pi * frequency * period * n + phase;
-            auto currentSample = waveformHolder.getState()->get(radians);
+            auto radians = 2.0f * juce::MathConstants<double>::pi * frequency * period * n + phase;
+            auto currentSample = (*waveform)->get(radians);
             for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
             {
                 auto *buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
@@ -295,13 +301,13 @@ public:
     }
     float &frequency;
     float &phase;
-    float period;
+    double period;
     int n;
     int N;
     double sampleRate;
     float time;
     int samples_count;
-    ValueHolder<F> &waveformHolder;
+    F **waveform;
 };
 
 class MathAudioSource : public StartableSource
@@ -310,7 +316,7 @@ public:
     class State
     {
     public:
-        virtual float operation(float a, float b)
+        virtual double operation(double a, double b)
         {
             return 0;
         }
@@ -318,7 +324,7 @@ public:
     class Add : public State
     {
     public:
-        float operation(float a, float b) override
+        double operation(double a, double b) override
         {
             return a + b;
         }
@@ -326,7 +332,7 @@ public:
     class Substract : public State
     {
     public:
-        float operation(float a, float b) override
+        double operation(double a, double b) override
         {
             return a - b;
         }
@@ -334,7 +340,7 @@ public:
     class Multiply : public State
     {
     public:
-        float operation(float a, float b) override
+        double operation(double a, double b) override
         {
             return a * b;
         }
@@ -342,7 +348,7 @@ public:
     class Divide : public State
     {
     public:
-        float operation(float a, float b) override
+        double operation(double a, double b) override
         {
             return a / b;
         }
@@ -418,86 +424,6 @@ public:
     juce::AudioBuffer<float> temp1;
     juce::AudioBuffer<float> temp2;
     ValueHolder<State> *stateholder;
-};
-
-class FM : public StartableSource
-{
-public:
-    FM(float &f, float &d, StartableSource *source, ValueHolder<F> *wf) : frequency(f), depth(d), StartableSource(), wfh(wf)
-    {
-        modulator = source;
-    };
-    void setSource(StartableSource *s)
-    {
-        modulator = s;
-    }
-    void prepareToPlay(int samplesPerBlockExpected, double _sampleRate) override
-    {
-        if (modulator == nullptr)
-            return;
-        modulator->prepareToPlay(samplesPerBlockExpected, _sampleRate);
-        sampleRate = _sampleRate;
-        period = 1.0f / sampleRate;
-    }
-    void releaseResources() override
-    {
-        if (modulator == nullptr)
-            return;
-        modulator->releaseResources();
-    }
-    void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
-    {
-        if (modulator == nullptr)
-        {
-            bufferToFill.clearActiveBufferRegion();
-            return;
-        }
-        temp.setSize(juce::jmax(1, bufferToFill.buffer->getNumChannels()),
-                     bufferToFill.buffer->getNumSamples());
-        modulator->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp, 0, bufferToFill.numSamples));
-
-        for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
-        {
-            for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
-            {
-                auto buffer1 = temp.getReadPointer(channel, bufferToFill.startSample);
-                float f = frequency + buffer1[sample] * depth;
-                auto currentSample = wfh->getState()->get(2.0f * juce::MathConstants<float>::pi * f * period * n);
-                auto buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
-                buffer[sample] = currentSample;
-            }
-            n++;
-            if (frequency * period * n >= 1)
-            {
-                n = 0;
-            }
-        }
-    }
-    void Start() override
-    {
-        if (modulator == nullptr)
-            return;
-        modulator->Start();
-    }
-    void Stop() override
-    {
-        if (modulator == nullptr)
-            return;
-        modulator->Stop();
-    }
-    bool isPlaying() override
-    {
-        return modulator->isPlaying();
-    }
-
-private:
-    StartableSource *modulator;
-    ValueHolder<F> *wfh;
-    juce::AudioBuffer<float> temp;
-    float &frequency, &depth;
-    float period = 0.0;
-    int n = 0;
-    double sampleRate = 0;
 };
 
 class ConcatenationSource : public StartableSource

@@ -9,10 +9,10 @@ public:
         fs = _f;
         size = fs.size();
     }
-    virtual float get(float x) = 0;
+    virtual double get(double x) = 0;
 
 protected:
-    float use_f(int index, float x)
+    double use_f(int index, double x)
     {
         if (index >= size)
         {
@@ -34,7 +34,7 @@ public:
     Const(float &_a) : F(std::vector<F **>({})), a(_a){
 
                                                  };
-    float get(float x)
+    double get(double x)
     {
         return a;
     }
@@ -47,20 +47,20 @@ class Sine : public F
 {
 public:
     Sine(std::vector<F **> _f) : F(_f) {}
-    float get(float x) override
+    double get(double x) override
     {
-        return (float)std::sin(use_f(0, x));
+        return (double)std::sin(use_f(0, x));
     }
 };
 class Square : public F
 {
 public:
     Square(std::vector<F **> _f) : F(_f) {}
-    float get(float rad) override
+    double get(double rad) override
     {
-        float x = use_f(0, rad);
-        x = std::fmod(x, 2.0f * juce::MathConstants<float>::pi);
-        if (x > juce::MathConstants<float>::pi)
+        double x = use_f(0, rad);
+        x = std::fmod(x, 2.0f * juce::MathConstants<double>::pi);
+        if (x > juce::MathConstants<double>::pi)
         {
             return -1;
         }
@@ -74,34 +74,34 @@ class Sawtooth : public F
 {
 public:
     Sawtooth(std::vector<F **> _f) : F(_f) {}
-    float get(float rad) override
+    double get(double rad) override
     {
         rad = use_f(0, rad);
-        float x = std::fmod(rad, 2.0f * juce::MathConstants<float>::pi);
-        if (x > juce::MathConstants<float>::pi)
-            return juce::jmap(x, juce::MathConstants<float>::pi, 2.0f * juce::MathConstants<float>::pi, -1.0f, 0.0f);
+        double x = std::fmod(rad, 2.0f * juce::MathConstants<double>::pi);
+        if (x > juce::MathConstants<double>::pi)
+            return juce::jmap(x, juce::MathConstants<double>::pi, 2.0f * juce::MathConstants<double>::pi, -1.0, 0.0);
         else
-            return juce::jmap(x, 0.0f, juce::MathConstants<float>::pi, 0.0f, 1.0f);
+            return juce::jmap(x, 0.0, juce::MathConstants<double>::pi, 0.0, 1.0);
     }
 };
 class Triangle : public F
 {
 public:
     Triangle(std::vector<F **> _f) : F(_f) {}
-    float get(float rad) override
+    double get(double rad) override
     {
         rad = use_f(0, rad);
-        float x = std::fmod(rad, 2.0f * juce::MathConstants<float>::pi);
-        return (x >= juce::MathConstants<float>::twoPi) ? juce::jmap(x,
-                                                                     (juce::MathConstants<float>::pi),
-                                                                     (juce::MathConstants<float>::twoPi),
-                                                                     (-1.0f),
-                                                                     (1.0f))
-                                                        : juce::jmap(x,
-                                                                     (0.0f),
-                                                                     (juce::MathConstants<float>::pi),
-                                                                     (1.0f),
-                                                                     (-1.0f));
+        double x = std::fmod(rad, 2.0f * juce::MathConstants<double>::pi);
+        return (x >= juce::MathConstants<double>::twoPi) ? juce::jmap(x,
+                                                                      (juce::MathConstants<double>::pi),
+                                                                      (juce::MathConstants<double>::twoPi),
+                                                                      (-1.0),
+                                                                      (1.0))
+                                                         : juce::jmap(x,
+                                                                      (0.0),
+                                                                      (juce::MathConstants<double>::pi),
+                                                                      (1.0),
+                                                                      (-1.0));
     }
 };
 
@@ -109,7 +109,7 @@ class Add : public F
 {
 public:
     Add(std::vector<F **> _f) : F(_f){};
-    float get(float x) override
+    double get(double x) override
     {
         return use_f(0, x) + use_f(1, x);
     }
@@ -118,7 +118,7 @@ class Substract : public F
 {
 public:
     Substract(std::vector<F **> _f) : F(_f){};
-    float get(float x) override
+    double get(double x) override
     {
         return use_f(0, x) - use_f(1, x);
     }
@@ -128,7 +128,7 @@ class Multiply : public F
 public:
     Multiply(std::vector<F **> _f) : F(_f){};
 
-    float get(float x) override
+    double get(double x) override
     {
         return use_f(0, x) * use_f(1, x);
     }
@@ -138,7 +138,7 @@ class Divide : public F
 public:
     Divide(std::vector<F **> _f) : F(_f){};
 
-    float get(float x) override
+    double get(double x) override
     {
         return use_f(0, x) / use_f(1, x);
     }

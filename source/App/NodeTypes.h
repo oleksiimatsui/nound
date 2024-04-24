@@ -30,11 +30,10 @@ const std::string NodeNames::RandomNode = "Random";
 const std::string NodeNames::WaveformNode = "Basic Waveform";
 const std::string NodeNames::OscillatorNode = "Oscilator";
 const std::string NodeNames::AudioMathNode = "Audio Math";
-const std::string NodeNames::FMNode = "Audio FM";
 const std::string NodeNames::NumberMathNode = "Number Math";
 const std::string NodeNames::Concatenate = "Concatenate";
 const std::string NodeNames::FunctionMathNode = "Arithmetic";
-const std::string NodeNames::ConstNode = "Const Function";
+const std::string NodeNames::ConstNode = "Const";
 
 class OutputNode : public EditorNode
 {
@@ -240,7 +239,7 @@ private:
     }
 };
 
-class WaveformNode : public EditorNode, ValueHolder<F>
+class WaveformNode : public EditorNode
 {
 public:
     enum InputKeys
@@ -300,10 +299,6 @@ public:
         return c;
     }
     F *waveform;
-    F *getState() override
-    {
-        return waveform;
-    }
 
 private:
     juce::ComboBox *c;
@@ -317,13 +312,13 @@ private:
         }
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::wave_out]))
         {
-            Data source = (ValueHolder<F> *)(this);
+            Data source = waveform;
             input->node->trigger(source, input);
         }
     }
 };
 
-class OscillatorNode : public EditorNode, NumberInput::Listener, ValueHolder<F>
+class OscillatorNode : public EditorNode, NumberInput::Listener
 {
 public:
     enum InputKeys
@@ -337,14 +332,9 @@ public:
     {
         audio_out
     };
-    F *getState()
-    {
-        return sine;
-    }
 
     OscillatorNode() : EditorNode()
     {
-        osc = this;
         header = NodeNames::OscillatorNode;
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
         registerInput(InputKeys::osc_, "wave", PinType::Function);
@@ -359,11 +349,10 @@ public:
     }
 
 private:
-    F *sine = new Sine(std::vector<F **>({}));
     float frequency = 440;
     float phase = 0;
     float t = 1;
-    ValueHolder<F> *osc;
+    F *wave = nullptr;
 
     void trigger(Data &data, [[maybe_unused]] Input *pin) override
     {
@@ -379,11 +368,11 @@ private:
         }
         if (pin == inputs[InputKeys::osc_])
         {
-            osc = std::any_cast<ValueHolder<F> *>(data);
+            wave = std::any_cast<F *>(data);
         }
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
         {
-            auto fs = new Osc(t, frequency, phase, *osc);
+            auto fs = new Osc(t, frequency, phase, &wave);
             Data source = (StartableSource *)(fs);
             input->node->trigger(source, input);
         }
@@ -492,77 +481,6 @@ private:
                     input->node->trigger(source, input);
                 }
             }
-        }
-    }
-};
-
-class FMNode : public EditorNode, NumberInput::Listener
-{
-public:
-    enum InputKeys
-    {
-        modulator_,
-        frequency_,
-        depth_,
-        wave_
-    };
-    enum OutputKeys
-    {
-        audio_out
-    };
-    FMNode()
-    {
-        header = NodeNames::FMNode;
-        registerInput(InputKeys::modulator_, "modulator", PinType::Audio);
-        registerInputWithComponent(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)));
-        registerInput(InputKeys::wave_, "waveform", PinType::Function);
-        registerInputWithComponent(InputKeys::depth_, "depth", PinType::Number, new NumberInput(this, 0, 5000, &(depth)));
-        registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
-    };
-    juce::Component *getInternal() override
-    {
-        return nullptr;
-    }
-
-private:
-    float frequency = 440;
-    float depth = 100;
-    StartableSource *s;
-    Data datatosend;
-    Vertical internal;
-    ValueHolder<F> *wf = nullptr;
-    std::vector<Input *> listeners;
-    void trigger(Data &data, [[maybe_unused]] Input *pin) override
-    {
-        if (pin == inputs[InputKeys::frequency_])
-        {
-            frequency = std::any_cast<float>(data);
-            ((NumberInput *)internals[InputKeys::frequency_])->update();
-        }
-        if (pin == inputs[InputKeys::wave_])
-        {
-            wf = std::any_cast<ValueHolder<F> *>(data);
-            ((NumberInput *)internals[InputKeys::depth_])->update();
-        }
-        if (pin == inputs[InputKeys::depth_])
-        {
-            depth = std::any_cast<float>(data);
-            ((NumberInput *)internals[InputKeys::depth_])->update();
-        }
-
-        if (pin == inputs[InputKeys::modulator_])
-        {
-            if (StartableSource *f = std::any_cast<StartableSource *>(data))
-            {
-                s = f;
-            }
-        }
-
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
-        {
-            auto fs = new FM(frequency, depth, s, wf);
-            Data source = (StartableSource *)(fs);
-            input->node->trigger(source, input);
         }
     }
 };

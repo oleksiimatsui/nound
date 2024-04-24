@@ -72,7 +72,6 @@ public:
                                               new ItemWithNode(NodeNames::RandomNode, std::vector<Item *>(), new NodeFactory<RandomNode>),
                                               new ItemWithNode(NodeNames::OscillatorNode, std::vector<Item *>(), new NodeFactory<OscillatorNode>),
                                               new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeFactory<ReverbNode>),
-                                              new ItemWithNode(NodeNames::FMNode, std::vector<Item *>(), new NodeFactory<FMNode>),
                                               new ItemWithNode(NodeNames::AudioMathNode, std::vector<Item *>(), new NodeFactory<AudioMathNode>),
                                               new ItemWithNode(NodeNames::Concatenate, std::vector<Item *>(), new NodeFactory<Concatenate>),
                                           })));
