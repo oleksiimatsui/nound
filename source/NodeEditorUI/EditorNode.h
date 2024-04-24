@@ -31,6 +31,17 @@ public:
         return internals[key];
     }
 
+    // void linkCreated(int pinKey)
+    // {
+    //     values[pinKey].push_back(generateData());
+    // }
+    // void linkRemoved(int pinKey){
+    //     values[pinKey].pop_back();
+    // }
+
+    // virtual Data generateData()=0;
+
 protected:
     std::map<int, juce::Component *> internals;
+    std::map<int, std::vector<Data>> values;
 };

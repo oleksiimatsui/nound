@@ -250,7 +250,7 @@ private:
 class Osc : public StartableSource
 {
 public:
-    Osc(float t, float &f, float &p, ValueHolder<F1> &w) : time(t), frequency(f), phase(p), StartableSource(), waveformHolder(w), samples_count(0), n(0), period(0), sampleRate(0), N(0)
+    Osc(float t, float &f, float &p, ValueHolder<F> &w) : time(t), frequency(f), phase(p), StartableSource(), waveformHolder(w), samples_count(0), n(0), period(0), sampleRate(0), N(0)
     {
     }
 
@@ -301,7 +301,7 @@ public:
     double sampleRate;
     float time;
     int samples_count;
-    ValueHolder<F1> &waveformHolder;
+    ValueHolder<F> &waveformHolder;
 };
 
 class MathAudioSource : public StartableSource
@@ -423,7 +423,7 @@ public:
 class FM : public StartableSource
 {
 public:
-    FM(float &f, float &d, StartableSource *source, ValueHolder<F1> *wf) : frequency(f), depth(d), StartableSource(), wfh(wf)
+    FM(float &f, float &d, StartableSource *source, ValueHolder<F> *wf) : frequency(f), depth(d), StartableSource(), wfh(wf)
     {
         modulator = source;
     };
@@ -492,7 +492,7 @@ public:
 
 private:
     StartableSource *modulator;
-    ValueHolder<F1> *wfh;
+    ValueHolder<F> *wfh;
     juce::AudioBuffer<float> temp;
     float &frequency, &depth;
     float period = 0.0;

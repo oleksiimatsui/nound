@@ -1,96 +1,64 @@
 #pragma once
 #include <JuceHeader.h>
 
-class F1
+class F
 {
 public:
-    F1()
+    F(std::vector<F **> _f)
     {
-        f = nullptr;
-    };
-    F1(F1 *_f)
-    {
-        f = _f;
+        fs = _f;
+        size = fs.size();
     }
     virtual float get(float x) = 0;
 
 protected:
-    float use_f(float x)
+    float use_f(int index, float x)
     {
-        if (f == nullptr)
+        if (index >= size)
         {
             return x;
         }
-        return f->get(x);
+        if (*fs[index] == nullptr)
+            return x;
+        return (*(fs[index]))->get(x);
     }
 
 private:
-    F1 *f;
+    std::vector<F **> fs;
+    int size;
 };
 
-class F2
+class Const : public F
 {
 public:
-    F2(F1 *_f, F1 *_g) : f(_f), g(_g)
-    {
-    }
-    virtual float get(float x, float y) = 0;
+    Const(float &_a) : F(std::vector<F **>({})), a(_a){
 
-protected:
-    float use_f(float x)
-    {
-        if (f == nullptr)
-        {
-            return x;
-        }
-        return f->get(x);
-    }
-    float use_g(float x)
-    {
-        if (g == nullptr)
-        {
-            return x;
-        }
-        return g->get(x);
-    }
-
-private:
-    F1 *f;
-    F1 *g;
-};
-
-class Const : public F1
-{
-public:
-    Const(float _a) : F1()
-    {
-        a = _a;
-    };
+                                                 };
     float get(float x)
     {
         return a;
     }
 
 private:
-    float a;
+    float &a;
 };
 
-class Sine : public F1
+class Sine : public F
 {
 public:
-    Sine() : F1(){};
+    Sine(std::vector<F **> _f) : F(_f) {}
     float get(float x) override
     {
-        return (float)std::sin(use_f(x));
+        return (float)std::sin(use_f(0, x));
     }
 };
-class Square : public F1
+class Square : public F
 {
 public:
-    Square() : F1(){};
+    Square(std::vector<F **> _f) : F(_f) {}
     float get(float rad) override
     {
-        float x = use_f(rad);
+        float x = use_f(0, rad);
         x = std::fmod(x, 2.0f * juce::MathConstants<float>::pi);
         if (x > juce::MathConstants<float>::pi)
         {
@@ -102,13 +70,13 @@ public:
         }
     }
 };
-class Sawtooth : public F1
+class Sawtooth : public F
 {
 public:
-    Sawtooth() : F1(){};
+    Sawtooth(std::vector<F **> _f) : F(_f) {}
     float get(float rad) override
     {
-        rad = use_f(rad);
+        rad = use_f(0, rad);
         float x = std::fmod(rad, 2.0f * juce::MathConstants<float>::pi);
         if (x > juce::MathConstants<float>::pi)
             return juce::jmap(x, juce::MathConstants<float>::pi, 2.0f * juce::MathConstants<float>::pi, -1.0f, 0.0f);
@@ -116,13 +84,13 @@ public:
             return juce::jmap(x, 0.0f, juce::MathConstants<float>::pi, 0.0f, 1.0f);
     }
 };
-class Triangle : public F1
+class Triangle : public F
 {
 public:
-    Triangle() : F1(){};
+    Triangle(std::vector<F **> _f) : F(_f) {}
     float get(float rad) override
     {
-        rad = use_f(rad);
+        rad = use_f(0, rad);
         float x = std::fmod(rad, 2.0f * juce::MathConstants<float>::pi);
         return (x >= juce::MathConstants<float>::twoPi) ? juce::jmap(x,
                                                                      (juce::MathConstants<float>::pi),
@@ -137,32 +105,41 @@ public:
     }
 };
 
-class Add : public F2
+class Add : public F
 {
 public:
-    Add(F1 *f, F1 *g) : F2(f, g){};
-    float get(float x, float y) override
+    Add(std::vector<F **> _f) : F(_f){};
+    float get(float x) override
     {
-        return use_f(x) + use_g(y);
+        return use_f(0, x) + use_f(1, x);
     }
 };
-class Multiply : public F2
+class Substract : public F
 {
 public:
-    Multiply(F1 *f, F1 *g) : F2(f, g){};
-
-    float get(float x, float y) override
+    Substract(std::vector<F **> _f) : F(_f){};
+    float get(float x) override
     {
-        return use_f(x) * use_g(y);
+        return use_f(0, x) - use_f(1, x);
     }
 };
-class Divide : public F2
+class Multiply : public F
 {
 public:
-    Divide(F1 *f, F1 *g) : F2(f, g){};
+    Multiply(std::vector<F **> _f) : F(_f){};
 
-    float get(float x, float y) override
+    float get(float x) override
     {
-        return use_f(x) / use_g(y);
+        return use_f(0, x) * use_f(1, x);
+    }
+};
+class Divide : public F
+{
+public:
+    Divide(std::vector<F **> _f) : F(_f){};
+
+    float get(float x) override
+    {
+        return use_f(0, x) / use_f(1, x);
     }
 };
