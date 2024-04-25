@@ -7,6 +7,111 @@
 #include "NodeGraph.h"
 #include "GraphProvider.h"
 
+class FlexWithColor : public juce::Component
+{
+public:
+    FlexWithColor() : juce::Component()
+    {
+        drawBorder = false;
+        padding = 0;
+        margin = 0;
+    }
+    void setPadding(int p)
+    {
+        padding = p;
+    }
+    void setMargin(int m)
+    {
+        margin = m;
+    }
+    void setColor(juce::Colour _color)
+    {
+        color = _color;
+    }
+    void setBorder(juce::Colour _color)
+    {
+        border = _color;
+        drawBorder = true;
+    }
+    void setDirection(juce::FlexBox::Direction j)
+    {
+        direction = j;
+    }
+
+    void setAlign(juce::FlexBox::AlignContent j)
+    {
+        align = j;
+    }
+    void setJustify(juce::FlexBox::JustifyContent j)
+    {
+        justify = j;
+    }
+
+    void addElements(std::vector<juce::Component *> _elements)
+    {
+        elements = _elements;
+        for (auto &e : elements)
+        {
+            addAndMakeVisible(e);
+        }
+    }
+    void paint(juce::Graphics &g) override
+    {
+        g.fillAll(color);
+        if (drawBorder)
+        {
+            g.setColour(border);
+            g.drawRect(getLocalBounds());
+        }
+    }
+    void resized() override
+    {
+        juce::FlexBox fb;
+        fb.justifyContent = justify;
+        fb.alignContent = align;
+        fb.flexDirection = direction;
+        for (auto &e : elements)
+        {
+            fb.items.add(juce::FlexItem(100, getHeight() - padding * 2, *e).withMargin(margin));
+        }
+        fb.performLayout(getLocalBounds());
+    }
+    std::vector<juce::Component *> elements;
+    juce::Colour color;
+    juce::Colour border;
+    bool drawBorder;
+    juce::FlexBox::JustifyContent justify;
+    juce::FlexBox::AlignContent align;
+    juce::FlexBox::Direction direction = juce::FlexBox::Direction::row;
+    int padding, margin;
+};
+
+class MenuButtonLookAndFeel : public juce::LookAndFeel_V4
+{
+public:
+    void drawButtonBackground(juce::Graphics &g, juce::Button &button, const juce::Colour &backgroundColour, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override
+    {
+        if (shouldDrawButtonAsDown)
+            g.setColour(App::ThemeProvider::getCurrentTheme()->hoveredColor);
+    }
+};
+class MenuButton : public juce::TextButton
+{
+public:
+    MenuButton() : juce::TextButton()
+    {
+        setLookAndFeel(&lookAndFeel);
+    }
+
+    ~MenuButton()
+    {
+        setLookAndFeel(nullptr);
+    }
+
+private:
+    MenuButtonLookAndFeel lookAndFeel;
+};
+
 class StretchComponent : public juce::Component
 {
 public:
@@ -48,26 +153,36 @@ class MainComponent : public juce::Component
 public:
     MainComponent() : node_editor(g), stretcher(false, &dropdown_panel, &node_editor, 0.1)
     {
-
-        juce::LookAndFeel::setDefaultLookAndFeel(&look_and_feel);
-
-        setTitle("Welcome to nound");
-        setDescription("sound node editor");
+        setTitle("Welcome to Nound");
+        setDescription("Sound node editor");
         setFocusContainerType(FocusContainerType::focusContainer);
         addAndMakeVisible(stretcher);
 
-        file_button.setButtonText("FILE");
+        file_button.setButtonText("File");
         file_button.onClick = [&]
         {
             juce::PopupMenu menu;
-            menu.addItem("New", nullptr);
-            menu.addItem("Open", nullptr);
-            menu.addItem("Save", nullptr);
-            menu.addItem("Export", nullptr);
+            menu.addItem("New", [this]
+                         { new_graph(); });
+            menu.addItem("Open", [this]
+                         { open(); });
+            menu.addItem("Save", [this]
+                         { save(); });
+            menu.addItem("Export", [this]
+                         { export(); });
             menu.showMenuAsync(juce::PopupMenu::Options{}.withTargetComponent(file_button));
         };
-        addAndMakeVisible(file_button);
+        toolbar.setColor(App::ThemeProvider::getCurrentTheme()->darkerColor);
+        toolbar.addElements(std::vector<juce::Component *>({&file_button}));
+        addAndMakeVisible(toolbar);
 
+        play_panel.setColor(App::ThemeProvider::getCurrentTheme()->backgroundColor);
+        play_panel.setBorder(juce::Colours::black);
+        play_panel.setJustify(juce::FlexBox::JustifyContent::center);
+        play_panel.setAlign(juce::FlexBox::AlignContent::center);
+        play_panel.setMargin(8);
+        play_panel.setPadding(8);
+        play_panel.addElements(std::vector<juce::Component *>({&play_button, &stop_button}));
         play_button.setButtonText("PLAY");
         play_button.onClick = [this]
         { play(); };
@@ -76,8 +191,7 @@ public:
         {
             stop();
         };
-        addAndMakeVisible(stop_button);
-        addAndMakeVisible(play_button);
+        addAndMakeVisible(play_panel);
 
         //   toolbar.addElements(std::vector<juce::Component *>({&file_button, &play_button, &stop_button}));
         // addAndMakeVisible(toolbar);
@@ -117,25 +231,28 @@ public:
         player.Stop();
     }
 
+    void save()
+    {
+    }
+    void new_graph()
+    {
+    }
+    void open()
+    {
+    }
+    void export()
+    {
+    }
+
     void resized() override
     {
         juce::FlexBox fb;
         fb.flexDirection = juce::FlexBox::Direction::column;
 
-        juce::FlexBox menu;
-        menu.flexDirection = juce::FlexBox::Direction::row;
-        menu.items.add(juce::FlexItem(100, 20, file_button));
-
-        juce::FlexBox play_panel;
-        play_panel.flexDirection = juce::FlexBox::Direction::row;
-        play_panel.items.add(juce::FlexItem(100, 50, play_button));
-        play_panel.items.add(juce::FlexItem(100, 50, stop_button));
-
-        fb.items.add(juce::FlexItem(getWidth(), 20, menu));
-        fb.items.add(juce::FlexItem(getWidth(), 50, play_panel));
+        fb.items.add(juce::FlexItem(getWidth(), 25, toolbar));
+        fb.items.add(juce::FlexItem(getWidth(), 50, play_panel).withMargin(0));
         fb.items.add(juce::FlexItem(getWidth(), 50, stretcher).withFlex(1));
 
-        menu.performLayout(getLocalBounds());
         fb.performLayout(getLocalBounds());
     }
 
@@ -147,37 +264,9 @@ private:
     StretchComponent stretcher;
     juce::TextButton play_button;
     juce::TextButton stop_button;
-    juce::TextButton file_button;
-    juce::LookAndFeel_V4 look_and_feel;
-
-    class Toolbar : public juce::Component
-    {
-    public:
-        Toolbar()
-        {
-        }
-        void addElements(std::vector<juce::Component *> _elements)
-        {
-            elements = _elements;
-            for (auto &e : elements)
-            {
-                addAndMakeVisible(e);
-            }
-        }
-        void resized() override
-        {
-            juce::FlexBox fb;
-            fb.flexDirection = juce::FlexBox::Direction::row;
-            for (auto &e : elements)
-            {
-                fb.items.add(juce::FlexItem(100, getHeight(), *e));
-            }
-            fb.performLayout(getLocalBounds());
-        }
-        std::vector<juce::Component *> elements;
-    };
-    Toolbar toolbar;
-    std::vector<juce::Component *> elements;
+    MenuButton file_button;
+    FlexWithColor toolbar;
+    FlexWithColor play_panel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

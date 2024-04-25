@@ -12,6 +12,8 @@ namespace App
         juce::Colour backgroundColor;
         juce::Colour textColor;
         juce::Colour dropdownMouseoverBackgroundColor;
+        juce::Colour darkerColor;
+        juce::Colour hoveredColor;
     };
 
     class DefaultTheme : public Theme
