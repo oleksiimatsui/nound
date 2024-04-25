@@ -48,6 +48,9 @@ class MainComponent : public juce::Component
 public:
     MainComponent() : node_editor(g), stretcher(false, &dropdown_panel, &node_editor, 0.1)
     {
+
+        juce::LookAndFeel::setDefaultLookAndFeel(&look_and_feel);
+
         setTitle("Welcome to nound");
         setDescription("sound node editor");
         setFocusContainerType(FocusContainerType::focusContainer);
@@ -63,6 +66,7 @@ public:
             menu.addItem("Export", nullptr);
             menu.showMenuAsync(juce::PopupMenu::Options{}.withTargetComponent(file_button));
         };
+        addAndMakeVisible(file_button);
 
         play_button.setButtonText("PLAY");
         play_button.onClick = [this]
@@ -72,8 +76,11 @@ public:
         {
             stop();
         };
-        toolbar.addElements(std::vector<juce::Component *>({&file_button, &play_button, &stop_button}));
-        addAndMakeVisible(toolbar);
+        addAndMakeVisible(stop_button);
+        addAndMakeVisible(play_button);
+
+        //   toolbar.addElements(std::vector<juce::Component *>({&file_button, &play_button, &stop_button}));
+        // addAndMakeVisible(toolbar);
         setSize(500, 500);
     }
     ~MainComponent() override
@@ -115,11 +122,20 @@ public:
         juce::FlexBox fb;
         fb.flexDirection = juce::FlexBox::Direction::column;
 
-        fb.items.add(juce::FlexItem(getWidth(), 50, toolbar));
-        juce::FlexItem second_item(getWidth(), 50, stretcher);
-        second_item = second_item.withFlex(1);
-        fb.items.add(second_item);
+        juce::FlexBox menu;
+        menu.flexDirection = juce::FlexBox::Direction::row;
+        menu.items.add(juce::FlexItem(100, 20, file_button));
 
+        juce::FlexBox play_panel;
+        play_panel.flexDirection = juce::FlexBox::Direction::row;
+        play_panel.items.add(juce::FlexItem(100, 50, play_button));
+        play_panel.items.add(juce::FlexItem(100, 50, stop_button));
+
+        fb.items.add(juce::FlexItem(getWidth(), 20, menu));
+        fb.items.add(juce::FlexItem(getWidth(), 50, play_panel));
+        fb.items.add(juce::FlexItem(getWidth(), 50, stretcher).withFlex(1));
+
+        menu.performLayout(getLocalBounds());
         fb.performLayout(getLocalBounds());
     }
 
@@ -132,6 +148,7 @@ private:
     juce::TextButton play_button;
     juce::TextButton stop_button;
     juce::TextButton file_button;
+    juce::LookAndFeel_V4 look_and_feel;
 
     class Toolbar : public juce::Component
     {
