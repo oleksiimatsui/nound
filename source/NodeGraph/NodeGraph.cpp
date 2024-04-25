@@ -224,6 +224,7 @@ void Graph::deleteNode(int id)
         Graph::deleteConnection(con_id);
     };
 
+    delete nodes[id];
     nodes.erase(id);
 
     for (auto &l : listeners)
