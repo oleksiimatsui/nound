@@ -169,7 +169,7 @@ public:
             menu.addItem("Save", [this]
                          { save(); });
             menu.addItem("Export", [this]
-                         { export(); });
+                         { export_graph(); });
             menu.showMenuAsync(juce::PopupMenu::Options{}.withTargetComponent(file_button));
         };
         toolbar.setColor(App::ThemeProvider::getCurrentTheme()->darkerColor);
@@ -183,10 +183,10 @@ public:
         play_panel.setMargin(8);
         play_panel.setPadding(8);
         play_panel.addElements(std::vector<juce::Component *>({&play_button, &stop_button}));
-        play_button.setButtonText("PLAY");
+        play_button.setButtonText(">");
         play_button.onClick = [this]
         { play(); };
-        stop_button.setButtonText("STOP");
+        stop_button.setButtonText("||");
         stop_button.onClick = [this]
         {
             stop();
@@ -233,6 +233,19 @@ public:
 
     void save()
     {
+        filechooser.reset(new juce::FileChooser("Save...", juce::File::getCurrentWorkingDirectory(),
+                                                "*", true));
+
+        filechooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [this](const juce::FileChooser &fc) mutable
+                                 {
+                                              if (fc.getURLResults().size() > 0)
+                                              {
+                                                  auto u = fc.getURLResult();
+                                                  auto name = u.getLocalFile().getFullPathName();
+                                        //          setFile (std::move (u), name);
+                                              }
+
+                                              filechooser = nullptr; }, nullptr);
     }
     void new_graph()
     {
@@ -240,7 +253,7 @@ public:
     void open()
     {
     }
-    void export()
+    void export_graph()
     {
     }
 
@@ -267,6 +280,7 @@ private:
     MenuButton file_button;
     FlexWithColor toolbar;
     FlexWithColor play_panel;
+    std::unique_ptr<juce::FileChooser> filechooser = nullptr;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };
