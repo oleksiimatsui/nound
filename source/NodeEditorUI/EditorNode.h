@@ -39,9 +39,9 @@ public:
     //     values[pinKey].pop_back();
     // }
 
-    // virtual Data generateData()=0;
+    // virtual Value generateData()=0;
 
 protected:
     std::map<int, juce::Component *> internals;
-    std::map<int, std::vector<Data>> values;
+    std::map<int, std::vector<Value>> values;
 };

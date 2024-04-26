@@ -5,7 +5,7 @@
 #include "NodeEditorComponent.h"
 #include "NodeDropdown.h"
 #include "NodeGraph.h"
-#include "GraphProvider.h"
+#include "EditorNodeGraph.h"
 
 class FlexWithColor : public juce::Component
 {
@@ -72,7 +72,7 @@ public:
         fb.flexDirection = direction;
         for (auto &e : elements)
         {
-            fb.items.add(juce::FlexItem(100, getHeight() - padding * 2, *e).withMargin(margin));
+            fb.items.add(juce::FlexItem(e->getWidth(), getHeight() - padding * 2, *e).withMargin(margin));
         }
         fb.performLayout(getLocalBounds());
     }
@@ -84,6 +84,7 @@ public:
     juce::FlexBox::AlignContent align;
     juce::FlexBox::Direction direction = juce::FlexBox::Direction::row;
     int padding, margin;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FlexWithColor);
 };
 
 class MenuButtonLookAndFeel : public juce::LookAndFeel_V4
@@ -110,6 +111,7 @@ public:
 
 private:
     MenuButtonLookAndFeel lookAndFeel;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MenuButton)
 };
 
 class StretchComponent : public juce::Component
@@ -146,12 +148,15 @@ private:
     juce::Component *B;
     juce::StretchableLayoutManager stretchableManager;
     juce::StretchableLayoutResizerBar resizerBar;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StretchComponent)
 };
 
 class MainComponent : public juce::Component
 {
 public:
-    MainComponent() : node_editor(g), stretcher(false, &dropdown_panel, &node_editor, 0.1)
+    MainComponent() : g(new EditorNodeGraph()), node_editor(g.get()),
+                      dropdown_panel(g.get()),
+                      stretcher(false, &dropdown_panel, &node_editor, 0.1)
     {
         setTitle("Welcome to Nound");
         setDescription("Sound node editor");
@@ -191,10 +196,8 @@ public:
         {
             stop();
         };
-        addAndMakeVisible(play_panel);
 
-        //   toolbar.addElements(std::vector<juce::Component *>({&file_button, &play_button, &stop_button}));
-        // addAndMakeVisible(toolbar);
+        addAndMakeVisible(play_panel);
         setSize(500, 500);
     }
     ~MainComponent() override
@@ -207,8 +210,8 @@ public:
 
     void play()
     {
-        auto graph = GraphProvider::getGraph();
-        Data d = nullptr;
+        auto graph = g.get();
+        Value d = nullptr;
         for (auto &[id, n] : graph->getNodes())
         {
             if (graph->getInputConnectionsOfNode(id).size() == 0)
@@ -227,7 +230,7 @@ public:
     }
     void stop()
     {
-        auto graph = GraphProvider::getGraph();
+        auto graph = &g;
         player.Stop();
     }
 
@@ -261,17 +264,18 @@ public:
     {
         juce::FlexBox fb;
         fb.flexDirection = juce::FlexBox::Direction::column;
-
+        play_button.changeWidthToFitText();
+        stop_button.changeWidthToFitText();
+        file_button.changeWidthToFitText();
         fb.items.add(juce::FlexItem(getWidth(), 25, toolbar));
         fb.items.add(juce::FlexItem(getWidth(), 50, play_panel).withMargin(0));
         fb.items.add(juce::FlexItem(getWidth(), 50, stretcher).withFlex(1));
-
         fb.performLayout(getLocalBounds());
     }
 
 private:
     SoundOutputSource player;
-    Graph *g = GraphProvider::getGraph();
+    std::unique_ptr<EditorNodeGraph> g;
     NodeEditorComponent node_editor;
     DropdownComponent dropdown_panel;
     StretchComponent stretcher;
@@ -283,4 +287,16 @@ private:
     std::unique_ptr<juce::FileChooser> filechooser = nullptr;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
+};
+
+class MainComponentTest : public juce::Component
+{
+public:
+    MainComponentTest()
+    {
+        setTitle("Welcome to Nound");
+        setDescription("Sound node editor");
+        setFocusContainerType(FocusContainerType::focusContainer);
+        setSize(500, 500);
+    }
 };

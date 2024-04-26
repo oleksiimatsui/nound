@@ -2,7 +2,6 @@
 #include "NodeGraph.h"
 #include "EditorNode.h"
 #include <JuceHeader.h>
-#include "GraphProvider.h"
 #include "vector"
 #include "Theme.h"
 #include "Components.h"
@@ -55,7 +54,7 @@ public:
     StartableSource *result;
 
 private:
-    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (pin == inputs[InputKeys::audio_])
         {
@@ -104,7 +103,7 @@ private:
     FileInput *internal;
     std::vector<StartableSource *> sources;
 
-    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (pin == inputs[InputKeys::predecessor])
         {
@@ -119,7 +118,7 @@ private:
         for (int i = 0; i < connection_inputs.size(); i++)
         {
             auto input = connection_inputs[i];
-            input->node->trigger((Data)sources[i], input);
+            input->node->trigger((Value)sources[i], input);
         }
     }
 };
@@ -181,7 +180,7 @@ public:
 private:
     juce::Reverb::Parameters p;
     std::vector<ReverbSource *> results;
-    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         for (auto &n : results)
             delete n;
@@ -193,7 +192,7 @@ private:
             results.push_back(fs);
             fs->setSource(input_source);
             fs->r->setParameters(p);
-            Data source = (StartableSource *)(fs);
+            Value source = (StartableSource *)(fs);
             input->node->trigger(source, input);
         }
     }
@@ -223,7 +222,7 @@ public:
 
 private:
     float t;
-    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (pin == inputs[InputKeys::seconds_])
         {
@@ -233,7 +232,7 @@ private:
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
         {
             auto fs = new RandomSource(t);
-            Data source = (StartableSource *)(fs);
+            Value source = (StartableSource *)(fs);
             input->node->trigger(source, input);
         }
     }
@@ -303,7 +302,7 @@ public:
 private:
     juce::ComboBox *c;
     F *func;
-    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (pin == inputs[InputKeys::function])
         {
@@ -312,7 +311,7 @@ private:
         }
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::wave_out]))
         {
-            Data source = waveform;
+            Value source = waveform;
             input->node->trigger(source, input);
         }
     }
@@ -354,7 +353,7 @@ private:
     float t = 1;
     F *wave = nullptr;
 
-    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (pin == inputs[InputKeys::frequency_])
         {
@@ -373,7 +372,7 @@ private:
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
         {
             auto fs = new Osc(t, frequency, phase, &wave);
-            Data source = (StartableSource *)(fs);
+            Value source = (StartableSource *)(fs);
             input->node->trigger(source, input);
         }
     }
@@ -457,7 +456,7 @@ private:
     StartableSource *s1;
     StartableSource *s2;
 
-    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (StartableSource *f = std::any_cast<StartableSource *>(data))
         {
@@ -477,7 +476,7 @@ private:
                     s->s1 = s1;
                     s->s2 = s2;
                     s->stateholder = this;
-                    Data source = (StartableSource *)(s);
+                    Value source = (StartableSource *)(s);
                     input->node->trigger(source, input);
                 }
             }
@@ -553,7 +552,7 @@ public:
     {
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::number_out]))
         {
-            Data source = state->operation(val1, val2);
+            Value source = state->operation(val1, val2);
             input->node->trigger(source, input);
         }
     };
@@ -566,7 +565,7 @@ private:
     float val2 = 0;
     float res;
 
-    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (pin != nullptr)
         {
@@ -587,7 +586,7 @@ private:
 
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::number_out]))
         {
-            Data source = state->operation(val1, val2);
+            Value source = state->operation(val1, val2);
             input->node->trigger(source, input);
         }
     }
@@ -624,7 +623,7 @@ private:
     StartableSource *s1;
     StartableSource *s2;
 
-    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (StartableSource *f = std::any_cast<StartableSource *>(data))
         {
@@ -642,7 +641,7 @@ private:
                 {
                     auto s = new ConcatenationSource();
                     s->sources = std::vector<StartableSource *>({s1, s2});
-                    Data source = (StartableSource *)(s);
+                    Value source = (StartableSource *)(s);
                     input->node->trigger(source, input);
                 }
             }
@@ -723,7 +722,7 @@ public:
     {
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::h]))
         {
-            Data source = result;
+            Value source = result;
             input->node->trigger(source, input);
         }
     };
@@ -737,7 +736,7 @@ private:
     F *val2;
     float res;
 
-    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (pin != nullptr)
         {
@@ -756,7 +755,7 @@ private:
 
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::h]))
         {
-            Data source = result;
+            Value source = result;
             input->node->trigger(source, input);
         }
     }
@@ -790,7 +789,7 @@ private:
     float t;
     F *fs;
 
-    void trigger(Data &data, [[maybe_unused]] Input *pin) override
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (pin == inputs[InputKeys::number])
         {
@@ -800,7 +799,7 @@ private:
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::func]))
         {
 
-            Data source = (F *)(fs);
+            Value source = (F *)(fs);
             input->node->trigger(source, input);
         }
     }

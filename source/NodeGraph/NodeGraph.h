@@ -44,7 +44,7 @@ public:
 };
 
 #include <any>
-using Data = std::any;
+using Value = std::any;
 class Graph;
 class Node
 {
@@ -56,10 +56,10 @@ public:
     std::map<int, Input *> inputs = {};
     int id;
     Graph *graph;
-    void virtual trigger(Data &v, [[maybe_unused]] Input *pin);
+    void virtual trigger(Value &v, [[maybe_unused]] Input *pin);
 
 protected:
-    //  void virtual trigger(Data &v, [[maybe_unused]] Input *pin);
+    //  void virtual trigger(Value &v, [[maybe_unused]] Input *pin);
     void registerInput(int key, const std::string &name, PinType type);
     void registerOutput(int key, const std::string &name, PinType type);
 };
@@ -106,7 +106,7 @@ public:
     Graph();
     std::unordered_map<int, Node *> getNodes();
     std::unordered_map<int, Connection *> getConnections();
-    ~Graph();
+    virtual ~Graph();
     void addNode(Node *node);
     Connection *addConnection(Pin *pin1, Pin *pin2);
     std::vector<int> getConnectionsOfNode(int id);
@@ -116,7 +116,7 @@ public:
 
     void registerListener(GraphListener *listener);
 
-    void triggerPin(Output *pin, Data &data);
+    void triggerPin(Output *pin, Value &Value);
 
     std::vector<Input *> getInputsOfOutput(Output *pin);
 

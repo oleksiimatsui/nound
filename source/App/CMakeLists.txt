@@ -14,8 +14,6 @@ target_include_directories(App
 
 target_sources(App
     PRIVATE
-
-    GraphProvider.h
     MainComponent.h
     NodeTypes.h
     NodeDropdown.h
@@ -23,7 +21,6 @@ target_sources(App
     Functions.h
     AppTheme.cpp
     Main.cpp
-    GraphProvider.cpp
 )
 
 target_compile_definitions(App

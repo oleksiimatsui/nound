@@ -102,7 +102,7 @@ public:
 
     std::unique_ptr<NodeListener> mouseListener;
 
-    NodeEditorComponent(Graph *g)
+    NodeEditorComponent(Graph *g) : graph(g)
     {
         g->registerListener(this);
         setWantsKeyboardFocus(true);
@@ -110,8 +110,6 @@ public:
         theme = ThemeProvider::getCurrentTheme();
         mouseListener = std::make_unique<NodeListener>(this);
         connection_preview = std::make_unique<ConnectionPreview>();
-
-        graph = g;
 
         int i = 0;
         for (auto &[id, n] : graph->getNodes())
@@ -146,7 +144,6 @@ public:
         for (auto &[_, n] : node_components)
             delete n;
         node_components.clear();
-        delete graph;
     }
 
     void mouseWheelMove(const juce::MouseEvent &mouseEvent, const juce::MouseWheelDetails &wheel) override
@@ -373,8 +370,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NodeEditorComponent);
     std::unordered_map<int, NodeComponent *> node_components;
     std::unordered_map<int, ConnectionComponent *> connection_components;
-    NodeComponent *node;
-    NodeComponent *node2;
     Theme *theme;
     int scale = 100;
     float size = 10000;

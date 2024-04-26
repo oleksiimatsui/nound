@@ -40,7 +40,7 @@ Node::~Node()
     outputs.clear();
 };
 
-void Node::trigger(Data &d, [[maybe_unused]] Input *pin) {
+void Node::trigger(Value &d, [[maybe_unused]] Input *pin) {
 
 };
 void Node::registerInput(int key, const std::string &name, PinType type)
@@ -130,7 +130,7 @@ void Graph::addNode(Node *node)
     };
 };
 
-void Graph::triggerPin(Output *pin, Data &data)
+void Graph::triggerPin(Output *pin, Value &data)
 {
     for (auto &[id, c] : connections)
     {
