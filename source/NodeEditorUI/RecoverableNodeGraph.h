@@ -72,8 +72,8 @@ public:
             node_info.x = position.x;
             node_info.y = position.y;
             node_info.type_id = node->type_id;
-            node_info.input_values = node->getInputs();
-            node_info.internal_values = node->getInternals();
+            node_info.input_values = node->getInputValues();
+            node_info.internal_values = node->getInternalValues();
             info.nodes[id] = node_info;
         }
         for (auto &[id, c] : connections)

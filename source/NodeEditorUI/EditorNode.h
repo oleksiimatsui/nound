@@ -17,9 +17,9 @@ public:
                    };
     ~EditorNode()
     {
-        for (auto &[_, n] : internals)
+        for (auto &[_, n] : input_components)
             delete n;
-        internals.clear();
+        input_components.clear();
     }
 
     virtual juce::Component *getInternal()
@@ -27,12 +27,21 @@ public:
         return nullptr;
     };
 
-    void registerInputWithComponent(int key, const std::string &name, int type, juce::Component *c)
+    void registerInput(int key, const std::string &name, int type, juce::Component *c, Value *value)
     {
-        registerInput(key, name, type);
-        internals[key] = c;
+        Node::registerInput(key, name, type);
+        input_components[key] = c;
+        input_values[key] = value;
     }
-
+    // void registerInput(int key, const std::string &name, int type, juce::Component *c)
+    // {
+    //     Node::registerInput(key, name, type);
+    //     input_components[key] = c;
+    // }
+    void registerInput(int key, const std::string &name, int type)
+    {
+        Node::registerInput(key, name, type);
+    }
     juce::Colour getPinColor(int type)
     {
         auto theme = ThemeProvider::getCurrentTheme();
@@ -54,7 +63,7 @@ public:
 
     juce::Component *getInternal(int key)
     {
-        return internals[key];
+        return input_components[key];
     }
 
     virtual void assignInputs(std::map<int, Value> values)
@@ -63,28 +72,24 @@ public:
     virtual void assignInternals(std::vector<Value> values)
     {
     }
-    virtual std::map<int, Value> getInputs()
+    virtual std::map<int, Value> getInputValues()
     {
-        return std::map<int, Value>();
+        std::map<int, Value> res;
+        for (auto &[id, val] : input_values)
+        {
+            res[id] = &val;
+        }
+        return res;
     }
-    virtual std::vector<Value> getInternals()
+    virtual std::vector<Value> getInternalValues()
     {
         return std::vector<Value>();
     }
 
-    // void linkCreated(int pinKey)
-    // {
-    //     values[pinKey].push_back(generateData());
-    // }
-    // void linkRemoved(int pinKey){
-    //     values[pinKey].pop_back();
-    // }
-
-    // virtual Value generateData()=0;
     int x, y;
     int type_id;
 
 protected:
-    std::map<int, juce::Component *> internals;
-    std::map<int, std::vector<Value>> values;
+    std::map<int, juce::Component *> input_components;
+    std::map<int, Value *> input_values;
 };

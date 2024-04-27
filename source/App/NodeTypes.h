@@ -7,6 +7,24 @@
 #include "Components.h"
 #include "Sources.h"
 
+template <class T>
+struct NodeTypeData
+{
+};
+
+enum class NodeTypes
+{
+    Output,
+    FileReader,
+    Reverb,
+    Waveform,
+    Oscillator,
+    AudioMath,
+    NumberMath,
+    Concatenate,
+    FunctionMath,
+    Const
+};
 struct NodeNames
 {
     static const std::string OutputNode;
@@ -16,7 +34,6 @@ struct NodeNames
     static const std::string WaveformNode;
     static const std::string OscillatorNode;
     static const std::string AudioMathNode;
-    static const std::string FMNode;
     static const std::string NumberMathNode;
     static const std::string Concatenate;
     static const std::string FunctionMathNode;
@@ -27,7 +44,6 @@ const std::string NodeNames::FileReader = "File Reader";
 const std::string NodeNames::ReverbNode = "Reverb";
 const std::string NodeNames::RandomNode = "Random";
 const std::string NodeNames::WaveformNode = "Basic Waveform";
-const std::string NodeNames::OscillatorNode = "Oscilator";
 const std::string NodeNames::AudioMathNode = "Audio Math";
 const std::string NodeNames::NumberMathNode = "Number Math";
 const std::string NodeNames::Concatenate = "Concatenate";
@@ -155,12 +171,12 @@ public:
         header = NodeNames::ReverbNode;
         registerInput(InputKeys::audio_in, "audio", PinType::Audio);
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
-        registerInputWithComponent(InputKeys::width, "width", PinType::Number, new NumberInput(this, 0, 1, &(p.width)));
-        registerInputWithComponent(InputKeys::damping, "damping", PinType::Number, new NumberInput(this, 0, 1, &(p.damping)));
-        registerInputWithComponent(InputKeys::dryLevel, "dryLevel", PinType::Number, new NumberInput(this, 0, 1, &(p.dryLevel)));
-        registerInputWithComponent(InputKeys::freezeMode, "freezeMode", PinType::Number, new NumberInput(this, 0, 1, &(p.freezeMode)));
-        registerInputWithComponent(InputKeys::roomSize, "roomSize", PinType::Number, new NumberInput(this, 0, 1, &(p.roomSize)));
-        registerInputWithComponent(InputKeys::wetLevel, "wetLevel", PinType::Number, new NumberInput(this, 0, 1, &(p.wetLevel)));
+        registerInput(InputKeys::width, "width", PinType::Number, new NumberInput(this, 0, 1, &(p.width)), (Value *)&(p.width));
+        registerInput(InputKeys::damping, "damping", PinType::Number, new NumberInput(this, 0, 1, &(p.damping)), (Value *)&(p.width));
+        registerInput(InputKeys::dryLevel, "dryLevel", PinType::Number, new NumberInput(this, 0, 1, &(p.dryLevel)), (Value *)&(p.width));
+        registerInput(InputKeys::freezeMode, "freezeMode", PinType::Number, new NumberInput(this, 0, 1, &(p.freezeMode)), (Value *)&(p.width));
+        registerInput(InputKeys::roomSize, "roomSize", PinType::Number, new NumberInput(this, 0, 1, &(p.roomSize)), (Value *)&(p.width));
+        registerInput(InputKeys::wetLevel, "wetLevel", PinType::Number, new NumberInput(this, 0, 1, &(p.wetLevel)), (Value *)&(p.width));
 
         valueChanged();
     };
@@ -213,7 +229,7 @@ public:
     {
         header = NodeNames::RandomNode;
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
-        registerInputWithComponent(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)));
+        registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)), (Value *)(&t));
     };
     juce::Component *getInternal() override
     {
@@ -227,7 +243,7 @@ private:
         if (pin == inputs[InputKeys::seconds_])
         {
             t = std::any_cast<float>(data);
-            ((NumberInput *)internals[InputKeys::seconds_])->update();
+            ((NumberInput *)input_components[InputKeys::seconds_])->update();
         }
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
         {
@@ -312,67 +328,6 @@ private:
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::wave_out]))
         {
             Value source = waveform;
-            input->node->trigger(source, input);
-        }
-    }
-};
-
-class OscillatorNode : public EditorNode, NumberInput::Listener
-{
-public:
-    enum InputKeys
-    {
-        frequency_,
-        phase_,
-        osc_,
-        seconds_,
-    };
-    enum OutputKeys
-    {
-        audio_out
-    };
-
-    OscillatorNode() : EditorNode()
-    {
-        header = NodeNames::OscillatorNode;
-        registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
-        registerInput(InputKeys::osc_, "wave", PinType::Function);
-        registerInputWithComponent(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)));
-        registerInputWithComponent(InputKeys::phase_, "phase", PinType::Number, new NumberInput(this, 0, 5000, &(phase)));
-        registerInputWithComponent(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)));
-    };
-
-    juce::Component *getInternal() override
-    {
-        return nullptr;
-    }
-
-private:
-    float frequency = 440;
-    float phase = 0;
-    float t = 1;
-    F *wave = nullptr;
-
-    void trigger(Value &data, [[maybe_unused]] Input *pin) override
-    {
-        if (pin == inputs[InputKeys::frequency_])
-        {
-            frequency = std::any_cast<float>(data);
-            ((NumberInput *)internals[InputKeys::frequency_])->update();
-        }
-        if (pin == inputs[InputKeys::seconds_])
-        {
-            t = std::any_cast<float>(data);
-            ((NumberInput *)internals[InputKeys::seconds_])->update();
-        }
-        if (pin == inputs[InputKeys::osc_])
-        {
-            wave = std::any_cast<F *>(data);
-        }
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
-        {
-            auto fs = new Osc(t, frequency, phase, &wave);
-            Value source = (StartableSource *)(fs);
             input->node->trigger(source, input);
         }
     }
@@ -504,8 +459,8 @@ public:
         states[Operations::multiply] = new MathAudioSource::Multiply();
         c = nullptr;
         header = NodeNames::NumberMathNode;
-        registerInputWithComponent(InputKeys::number_1, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val1)));
-        registerInputWithComponent(InputKeys::number_2, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val2)));
+        registerInput(InputKeys::number_1, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val1)), (Value *)&(val1));
+        registerInput(InputKeys::number_2, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val2)), (Value *)&(val2));
         registerOutput(OutputKeys::number_out, "number", PinType::Number);
     };
     enum Operations
@@ -574,12 +529,12 @@ private:
                 if (pin == inputs[InputKeys::number_1])
                 {
                     val1 = f;
-                    ((NumberInput *)internals[InputKeys::number_1])->update();
+                    ((NumberInput *)input_components[InputKeys::number_1])->update();
                 }
                 else if (pin == inputs[InputKeys::number_2])
                 {
                     val2 = f;
-                    ((NumberInput *)internals[InputKeys::number_2])->update();
+                    ((NumberInput *)input_components[InputKeys::number_2])->update();
                 }
             }
         }
@@ -778,7 +733,7 @@ public:
         t = 0;
         fs = new Const(t);
         registerOutput(OutputKeys::func, "number", PinType::Function);
-        registerInputWithComponent(InputKeys::number, "", PinType::Number, new NumberInput(this, 0, 5000, &(t)));
+        registerInput(InputKeys::number, "", PinType::Number, new NumberInput(this, 0, 5000, &(t)), (Value *)&(t));
     };
     juce::Component *getInternal() override
     {
@@ -794,7 +749,7 @@ private:
         if (pin == inputs[InputKeys::number])
         {
             t = std::any_cast<float>(data);
-            ((NumberInput *)internals[InputKeys::number])->update();
+            ((NumberInput *)input_components[InputKeys::number])->update();
         }
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::func]))
         {

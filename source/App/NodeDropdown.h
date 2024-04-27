@@ -82,7 +82,7 @@ public:
                                           {
                                               new ItemWithNode(NodeNames::FileReader, std::vector<Item *>(), new NodeFactory<FileReader>, g),
                                               new ItemWithNode(NodeNames::RandomNode, std::vector<Item *>(), new NodeFactory<RandomNode>, g),
-                                              new ItemWithNode(NodeNames::OscillatorNode, std::vector<Item *>(), new NodeFactory<OscillatorNode>, g),
+
                                               new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeFactory<ReverbNode>, g),
                                               new ItemWithNode(NodeNames::AudioMathNode, std::vector<Item *>(), new NodeFactory<AudioMathNode>, g),
                                               new ItemWithNode(NodeNames::Concatenate, std::vector<Item *>(), new NodeFactory<Concatenate>, g),
