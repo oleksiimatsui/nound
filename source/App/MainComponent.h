@@ -6,6 +6,23 @@
 #include "NodeDropdown.h"
 #include "NodeGraph.h"
 #include "RecoverableNodeGraph.h"
+#include <fstream>
+
+class NoundTypesFactory : public TypesRecoverFactory
+{
+    virtual EditorNode *getNode(int type_id)
+    {
+        switch ((NodeTypes)type_id)
+        {
+        case NodeTypes::AudioMath:
+            return new AudioMathNode();
+            break;
+
+        default:
+            return nullptr;
+        }
+    }
+};
 
 class FlexWithColor : public juce::Component
 {
@@ -163,6 +180,8 @@ public:
         setFocusContainerType(FocusContainerType::focusContainer);
         addAndMakeVisible(stretcher);
 
+        factory.reset(new NoundTypesFactory);
+
         file_button.setButtonText("File");
         file_button.onClick = [&]
         {
@@ -171,8 +190,8 @@ public:
                          { new_graph(); });
             menu.addItem("Open", [this]
                          { open(); });
-            menu.addItem("Save", [this]
-                         { save(); });
+            menu.addItem("Save As", [this]
+                         { save_as(); });
             menu.addItem("Export", [this]
                          { export_graph(); });
             menu.showMenuAsync(juce::PopupMenu::Options{}.withTargetComponent(file_button));
@@ -234,21 +253,32 @@ public:
         player.Stop();
     }
 
-    void save()
+    void save_as()
     {
-        filechooser.reset(new juce::FileChooser("Save...", juce::File::getCurrentWorkingDirectory(),
-                                                "*", true));
+        auto fileToSave = juce::File::createTempFile("saveChooserDemo");
 
-        filechooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles, [this](const juce::FileChooser &fc) mutable
-                                 {
-                                              if (fc.getURLResults().size() > 0)
-                                              {
-                                                  auto u = fc.getURLResult();
-                                                  auto name = u.getLocalFile().getFullPathName();
-                                        //          setFile (std::move (u), name);
-                                              }
+        if (fileToSave.createDirectory().wasOk())
+        {
+            fileToSave = fileToSave.getChildFile("untitled.nound");
+            fileToSave.deleteFile();
+            juce::FileOutputStream outStream(fileToSave);
+        }
 
-                                              filechooser = nullptr; }, nullptr);
+        fc.reset(new juce::FileChooser("Save as",
+                                       juce::File::getCurrentWorkingDirectory().getChildFile(fileToSave.getFileName()),
+                                       ".nound", true));
+
+        fc->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+                        [this, fileToSave](const juce::FileChooser &chooser)
+                        {
+                            auto result = chooser.getURLResult();
+                            auto name = result.isEmpty() ? juce::String()
+                                                         : (result.isLocalFile() ? result.getLocalFile().getFullPathName()
+                                                                                 : result.toString(true));
+
+                            selected_file_path = name;
+                            saveGraphInfo(name);
+                        });
     }
     void new_graph()
     {
@@ -273,9 +303,41 @@ public:
         fb.performLayout(getLocalBounds());
     }
 
+    void setGraphInfo(juce::String path)
+    {
+        std::ifstream file(path.getCharPointer());
+        if (file.is_open())
+        {
+            GraphInfo info;
+            file >> info;
+            file.close();
+            g.reset(new RecoverableNodeGraph(info, factory.get()));
+        }
+        else
+        {
+            std::cerr << "Error: Unable to open file." << std::endl;
+        }
+    }
+    void saveGraphInfo(juce::String path)
+    {
+        auto info = g.get()->get_info(&node_editor);
+        std::ofstream file(path.getCharPointer());
+        if (file.is_open())
+        {
+            file << info;
+            file.close();
+            std::cout << "GraphInfo object saved to file." << std::endl;
+        }
+        else
+        {
+            std::cerr << "Error: Unable to open file." << std::endl;
+        }
+    }
+
 private:
     SoundOutputSource player;
     std::unique_ptr<RecoverableNodeGraph> g;
+    std::unique_ptr<TypesRecoverFactory> factory;
     NodeEditorComponent node_editor;
     DropdownComponent dropdown_panel;
     StretchComponent stretcher;
@@ -284,8 +346,8 @@ private:
     MenuButton file_button;
     FlexWithColor toolbar;
     FlexWithColor play_panel;
-    std::unique_ptr<juce::FileChooser> filechooser = nullptr;
-
+    std::unique_ptr<juce::FileChooser> fc = nullptr;
+    juce::String selected_file_path;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };
 
