@@ -1,9 +1,9 @@
 #include "NodeGraph.h"
 
-Pin::Pin(int _key, std::string _name, PinType _type, Node *_node)
+Pin::Pin(int _key, std::string _name, int _type, Node *_node)
     : key(_key), name(_name), type(_type), node(_node) {}
-Output::Output(int _key, std::string _name, PinType _type, Node *_node) : Pin(_key, _name, _type, _node){};
-Input::Input(int _key, std::string _name, PinType _type, Node *_node) : Pin(_key, _name, _type, _node){};
+Output::Output(int _key, std::string _name, int _type, Node *_node) : Pin(_key, _name, _type, _node){};
+Input::Input(int _key, std::string _name, int _type, Node *_node) : Pin(_key, _name, _type, _node){};
 
 bool Input::isInput()
 {
@@ -43,12 +43,12 @@ Node::~Node()
 void Node::trigger(Value &d, [[maybe_unused]] Input *pin) {
 
 };
-void Node::registerInput(int key, const std::string &name, PinType type)
+void Node::registerInput(int key, const std::string &name, int type)
 {
     inputs[key] = new Input(key, name, type, this);
     // inputs.push_back(Input(inputs.size(), name, type, this));
 };
-void Node::registerOutput(int key, const std::string &name, PinType type)
+void Node::registerOutput(int key, const std::string &name, int type)
 {
     outputs[key] = new Output(key, name, type, this);
 };

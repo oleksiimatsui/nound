@@ -27,19 +27,7 @@ public:
     }
     juce::Colour getColor()
     {
-        juce::Colour res;
-        switch (pin->type)
-        {
-        case PinType::Number:
-            res = theme->numberPinColor;
-            break;
-        case PinType::Function:
-            res = theme->wavePinColor;
-            break;
-        case PinType::Audio:
-            res = theme->soundPinColor;
-            break;
-        }
+        juce::Colour res = ((EditorNode *)(pin->node))->getPinColor(pin->type);
         return res;
     }
     Pin *pin;

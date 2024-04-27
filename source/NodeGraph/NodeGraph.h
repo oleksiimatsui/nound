@@ -6,21 +6,15 @@
 #include <stdexcept>
 #include <future>
 
-enum class PinType
-{
-    Audio,
-    Number,
-    Function
-};
 class Node;
 class ConnectionBuilder;
 class Pin
 {
 public:
     Pin(){};
-    Pin(int _key, std::string _name, PinType _type, Node *_node);
+    Pin(int _key, std::string _name, int _type, Node *_node);
     std::string name;
-    PinType type;
+    int type;
     Node *node;
     int key;
     virtual bool isInput() = 0;
@@ -30,7 +24,7 @@ class Input : public Pin
 {
 public:
     Input(){};
-    Input(int _key, std::string _name, PinType _type, Node *_node);
+    Input(int _key, std::string _name, int _type, Node *_node);
     bool isInput() override;
     void accept(ConnectionBuilder *factory) override;
 };
@@ -38,7 +32,7 @@ class Output : public Pin
 {
 public:
     Output(){};
-    Output(int _key, std::string _name, PinType _type, Node *_node);
+    Output(int _key, std::string _name, int _type, Node *_node);
     bool isInput() override;
     void accept(ConnectionBuilder *factory) override;
 };
@@ -60,8 +54,8 @@ public:
 
 protected:
     //  void virtual trigger(Value &v, [[maybe_unused]] Input *pin);
-    void registerInput(int key, const std::string &name, PinType type);
-    void registerOutput(int key, const std::string &name, PinType type);
+    void registerInput(int key, const std::string &name, int type);
+    void registerOutput(int key, const std::string &name, int type);
 };
 
 class Connection

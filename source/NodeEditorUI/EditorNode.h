@@ -2,6 +2,13 @@
 #include <JuceHeader.h>
 #include "NodeGraph.h"
 
+enum PinType
+{
+    Number,
+    Function,
+    Audio
+};
+
 class EditorNode : public Node
 {
 public:
@@ -20,10 +27,29 @@ public:
         return nullptr;
     };
 
-    void registerInputWithComponent(int key, const std::string &name, PinType type, juce::Component *c)
+    void registerInputWithComponent(int key, const std::string &name, int type, juce::Component *c)
     {
         registerInput(key, name, type);
         internals[key] = c;
+    }
+
+    juce::Colour getPinColor(int type)
+    {
+        auto theme = ThemeProvider::getCurrentTheme();
+        juce::Colour res;
+        switch (type)
+        {
+        case PinType::Number:
+            res = theme->numberPinColor;
+            break;
+        case PinType::Function:
+            res = theme->wavePinColor;
+            break;
+        case PinType::Audio:
+            res = theme->soundPinColor;
+            break;
+        }
+        return res;
     }
 
     juce::Component *getInternal(int key)
