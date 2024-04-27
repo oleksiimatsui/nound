@@ -30,14 +30,14 @@ struct GraphInfo
     std::unordered_map<int, connection> connections;
 };
 
-class RecoveringNodeGraph : public Graph
+class RecoverableNodeGraph : public Graph
 {
 public:
-    RecoveringNodeGraph(){
+    RecoverableNodeGraph(){
 
     };
 
-    ~RecoveringNodeGraph() override
+    ~RecoverableNodeGraph() override
     {
     }
 

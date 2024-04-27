@@ -5,7 +5,7 @@
 #include "NodeEditorComponent.h"
 #include "NodeDropdown.h"
 #include "NodeGraph.h"
-#include "RecoveringNodeGraph.h"
+#include "RecoverableGraph.h"
 
 class FlexWithColor : public juce::Component
 {
@@ -154,7 +154,7 @@ private:
 class MainComponent : public juce::Component
 {
 public:
-    MainComponent() : g(new RecoveringNodeGraph()), node_editor(g.get()),
+    MainComponent() : g(new RecoverableGraph()), node_editor(g.get()),
                       dropdown_panel(g.get()),
                       stretcher(false, &dropdown_panel, &node_editor, 0.1)
     {
@@ -275,7 +275,7 @@ public:
 
 private:
     SoundOutputSource player;
-    std::unique_ptr<RecoveringNodeGraph> g;
+    std::unique_ptr<RecoverableGraph> g;
     NodeEditorComponent node_editor;
     DropdownComponent dropdown_panel;
     StretchComponent stretcher;
