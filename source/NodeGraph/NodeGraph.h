@@ -113,14 +113,11 @@ public:
     std::vector<int> getInputConnectionsOfNode(int id);
     void deleteConnection(int id);
     void deleteNode(int id);
-
     void registerListener(GraphListener *listener);
-
     void triggerPin(Output *pin, Value &Value);
-
     std::vector<Input *> getInputsOfOutput(Output *pin);
 
-private:
+protected:
     std::unordered_map<int, Node *> nodes;
     std::unordered_map<int, Connection *> connections;
     int getId();

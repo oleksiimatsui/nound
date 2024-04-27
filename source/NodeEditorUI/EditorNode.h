@@ -31,6 +31,21 @@ public:
         return internals[key];
     }
 
+    virtual void assignInputs(std::map<int, Value> values)
+    {
+    }
+    virtual void assignInternals(std::vector<Value> values)
+    {
+    }
+    virtual std::map<int, Value> getInputs()
+    {
+        return std::map<int, Value>();
+    }
+    virtual std::vector<Value> getInternals()
+    {
+        return std::vector<Value>();
+    }
+
     // void linkCreated(int pinKey)
     // {
     //     values[pinKey].push_back(generateData());
@@ -40,6 +55,8 @@ public:
     // }
 
     // virtual Value generateData()=0;
+    int x, y;
+    int type_id;
 
 protected:
     std::map<int, juce::Component *> internals;

@@ -21,6 +21,7 @@ target_sources(App
     Functions.h
     AppTheme.cpp
     Main.cpp
+    GraphRecoverer.h
 )
 
 target_compile_definitions(App

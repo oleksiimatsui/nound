@@ -22,7 +22,7 @@ target_sources(${TargetName}
         NodeEditorComponent.h
         PinComponent.h
         EditorNode.h
-        EditorNodeGraph.h
+        RecoveringNodeGraph.h
 )
 
 

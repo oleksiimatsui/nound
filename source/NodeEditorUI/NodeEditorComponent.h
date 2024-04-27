@@ -114,7 +114,8 @@ public:
         int i = 0;
         for (auto &[id, n] : graph->getNodes())
         {
-            node_components[id] = new NodeComponent(juce::Point<int>(i * 100 + 10, 10), (EditorNode *)n);
+            EditorNode *en = (EditorNode *)n;
+            node_components[id] = new NodeComponent(juce::Point<int>(en->x, en->y), en);
             i++;
         };
 
@@ -364,6 +365,11 @@ public:
 
     void addNode()
     {
+    }
+
+    juce::Point<int> getNodePosition(int id)
+    {
+        return node_components[id]->getPosition();
     }
 
 private:
