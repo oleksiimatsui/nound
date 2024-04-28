@@ -3,25 +3,9 @@
 #include "vector"
 #include "string"
 #include <JuceHeader.h>
+#include "NodeTypes.h"
 #include "AppTheme.h"
 #include "NodeGraph.h"
-#include "NodeTypes.h"
-
-class AbstractNodeFactory
-{
-public:
-    virtual EditorNode *create() = 0;
-};
-
-template <class T>
-class NodeFactory : public AbstractNodeFactory
-{
-public:
-    EditorNode *create() override
-    {
-        return new T;
-    }
-};
 
 struct Item
 {
@@ -80,12 +64,12 @@ public:
                                                new ItemWithNode(NodeNames::ConstNode, std::vector<Item *>(), new NodeFactory<ConstFunctionNode>, g)})));
         i.push_back(new Item("Audio", std::vector<Item *>(
                                           {
-                                              new ItemWithNode(NodeNames::FileReader, std::vector<Item *>(), new NodeFactory<FileReader>, g),
+                                              new ItemWithNode(NodeNames::FileReader, std::vector<Item *>(), new NodeFactory<FileReaderNode>, g),
                                               new ItemWithNode(NodeNames::RandomNode, std::vector<Item *>(), new NodeFactory<RandomNode>, g),
 
                                               new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeFactory<ReverbNode>, g),
                                               new ItemWithNode(NodeNames::AudioMathNode, std::vector<Item *>(), new NodeFactory<AudioMathNode>, g),
-                                              new ItemWithNode(NodeNames::Concatenate, std::vector<Item *>(), new NodeFactory<Concatenate>, g),
+                                              new ItemWithNode(NodeNames::Concatenate, std::vector<Item *>(), new NodeFactory<ConcatenateNode>, g),
                                           })));
 
         i.push_back(new ItemWithNode(NodeNames::NumberMathNode, std::vector<Item *>(), new NodeFactory<NumberMathNode>, g));

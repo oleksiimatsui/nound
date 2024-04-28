@@ -12,9 +12,12 @@ enum PinType
 class EditorNode : public Node
 {
 public:
-    EditorNode() : Node(){
-
-                   };
+    EditorNode() : Node()
+    {
+        x = 0;
+        y = 0;
+        type_id = 0;
+    };
     ~EditorNode()
     {
         for (auto &[_, n] : input_components)

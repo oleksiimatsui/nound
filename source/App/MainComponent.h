@@ -8,22 +8,6 @@
 #include "RecoverableNodeGraph.h"
 #include <fstream>
 
-class NoundTypesFactory : public TypesRecoverFactory
-{
-    virtual EditorNode *getNode(int type_id)
-    {
-        switch ((NodeTypes)type_id)
-        {
-        case NodeTypes::AudioMath:
-            return new AudioMathNode();
-            break;
-
-        default:
-            return nullptr;
-        }
-    }
-};
-
 class FlexWithColor : public juce::Component
 {
 public:
@@ -180,7 +164,7 @@ public:
         setFocusContainerType(FocusContainerType::focusContainer);
         addAndMakeVisible(stretcher);
 
-        factory.reset(new NoundTypesFactory);
+        factory.reset(new NoundTypesFactory());
 
         file_button.setButtonText("File");
         file_button.onClick = [&]
@@ -259,14 +243,14 @@ public:
 
         if (fileToSave.createDirectory().wasOk())
         {
-            fileToSave = fileToSave.getChildFile("untitled.nound");
+            fileToSave = fileToSave.getChildFile("untitled.txt");
             fileToSave.deleteFile();
             juce::FileOutputStream outStream(fileToSave);
         }
 
         fc.reset(new juce::FileChooser("Save as",
                                        juce::File::getCurrentWorkingDirectory().getChildFile(fileToSave.getFileName()),
-                                       ".nound", true));
+                                       "*.nound", true));
 
         fc->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
                         [this, fileToSave](const juce::FileChooser &chooser)
@@ -285,6 +269,20 @@ public:
     }
     void open()
     {
+        fc.reset(new juce::FileChooser("Open", juce::File::getCurrentWorkingDirectory(),
+                                       "*.nound", true));
+
+        fc->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+                        [this](const juce::FileChooser &chooser)
+                        {
+                            auto result = chooser.getURLResult();
+                            auto name = result.isEmpty() ? juce::String()
+                                                         : (result.isLocalFile() ? result.getLocalFile().getFullPathName()
+                                                                                 : result.toString(true));
+
+                            selected_file_path = name;
+                            setGraphInfo(name);
+                        });
     }
     void export_graph()
     {
@@ -311,7 +309,8 @@ public:
             GraphInfo info;
             file >> info;
             file.close();
-            g.reset(new RecoverableNodeGraph(info, factory.get()));
+            g.get()->recover(info, factory.get());
+            node_editor.update();
         }
         else
         {
@@ -320,8 +319,14 @@ public:
     }
     void saveGraphInfo(juce::String path)
     {
-        auto info = g.get()->get_info(&node_editor);
-        std::ofstream file(path.getCharPointer());
+        std::map<int, juce::Point<int>> positions;
+        for (auto &[id, node] : g.get()->getNodes())
+        {
+            positions[id] = node_editor.getNodePosition(id);
+        }
+        auto info = g.get()->get_info(positions);
+        std::ofstream file(path.getCharPointer(), std::ofstream::out | std::ofstream::trunc);
+
         if (file.is_open())
         {
             file << info;

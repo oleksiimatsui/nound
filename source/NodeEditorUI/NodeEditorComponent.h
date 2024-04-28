@@ -110,6 +110,26 @@ public:
         theme = ThemeProvider::getCurrentTheme();
         mouseListener = std::make_unique<NodeListener>(this);
         connection_preview = std::make_unique<ConnectionPreview>();
+        update();
+    }
+
+    void update()
+    {
+
+        for (auto &[id, node] : node_components)
+        {
+            auto c = node_components[id];
+            c->removeMouseListener(mouseListener.get());
+            removeChildComponent(c);
+        }
+        node_components.clear();
+        for (auto &[id, c] : connection_components)
+        {
+            auto c = connection_components[id];
+            c->removeMouseListener(mouseListener.get());
+            removeChildComponent(c);
+        }
+        connection_components.clear();
 
         int i = 0;
         for (auto &[id, n] : graph->getNodes())
@@ -122,7 +142,7 @@ public:
         for (auto &[id, c] : graph->getConnections())
         {
             PinComponent *pin1 = node_components[c->getNodeFromId()]->outputs[c->getPinFromNumber()];
-            PinComponent *pin2 = node_components[c->getNodeToId()]->outputs[c->getPinToNumber()];
+            PinComponent *pin2 = node_components[c->getNodeToId()]->inputs[c->getPinToNumber()];
             connection_components[id] = new ConnectionComponent(pin1, pin2);
         };
 
@@ -136,7 +156,6 @@ public:
             n->addMouseListener(mouseListener.get(), true);
             addAndMakeVisible(n);
         };
-
         refreshConnections();
     }
 
@@ -369,7 +388,7 @@ public:
 
     juce::Point<int> getNodePosition(int id)
     {
-        return node_components[id]->getPosition();
+        return node_components[id]->position;
     }
 
 private:

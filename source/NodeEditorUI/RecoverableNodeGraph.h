@@ -1,7 +1,8 @@
 #pragma once
 #include <JuceHeader.h>
+#include "NodeEditorComponent.h"
 #include "NodeGraph.h"
-#include "EditorNode.h"
+#include <fstream>
 
 class TypesRecoverFactory
 {
@@ -37,6 +38,8 @@ std::ostream &operator<<(std::ostream &os, const GraphInfo &graph)
     os << graph.nodes.size() << "\n";
     for (const auto &pair : graph.nodes)
     {
+        const auto &key = pair.first;
+        os << key << " ";
         const auto &node = pair.second;
         os << node.type_id << " " << node.x << " " << node.y << " ";
         os << node.input_values.size() << " ";
@@ -83,6 +86,7 @@ std::ostream &operator<<(std::ostream &os, const GraphInfo &graph)
     os << graph.connections.size() << "\n";
     for (const auto &pair : graph.connections)
     {
+        os << pair.first << " ";
         const auto &connection = pair.second;
         os << connection.node_from_id << " " << connection.node_to_id << " ";
         os << connection.pin_from_number << " " << connection.pin_to_number << "\n";
@@ -100,6 +104,8 @@ std::istream &operator>>(std::istream &is, GraphInfo &graph)
     is.ignore(); // Ignore the newline character after reading num_nodes
     for (int i = 0; i < num_nodes; ++i)
     {
+        int key;
+        is >> key;
         GraphInfo::node node;
         is >> node.type_id >> node.x >> node.y;
 
@@ -190,7 +196,7 @@ std::istream &operator>>(std::istream &is, GraphInfo &graph)
             }
         }
 
-        graph.nodes[i] = node;
+        graph.nodes[key] = node;
     }
 
     // Deserialize connections
@@ -199,10 +205,13 @@ std::istream &operator>>(std::istream &is, GraphInfo &graph)
     is.ignore(); // Ignore the newline character after reading num_connections
     for (int i = 0; i < num_connections; ++i)
     {
+        int key;
+        is >> key;
         GraphInfo::connection connection;
         is >> connection.node_from_id >> connection.node_to_id;
         is >> connection.pin_from_number >> connection.pin_to_number;
-        graph.connections[i] = connection;
+        graph.connections[key] = connection;
+        is.ignore();
     }
 
     return is;
@@ -220,13 +229,25 @@ public:
     ~RecoverableNodeGraph() override
     {
     }
-
+    void clear_graph()
+    {
+        // for (auto &[id, n] : nodes)
+        //     deleteNode(id);
+        for (auto &[_, n] : nodes)
+            delete n;
+        nodes.clear();
+        for (auto &[_, n] : connections)
+            delete n;
+        connections.clear();
+    }
     void recover(GraphInfo info, TypesRecoverFactory *factory)
     {
+        clear_graph();
         for (auto &[id, info] : info.nodes)
         {
             auto node = factory->getNode(info.type_id);
             nodes[id] = node;
+            node->id = id;
             Graph::id = std::max(id, Graph::id);
             node->assignInputs(info.input_values);
             node->assignInternals(info.internal_values);
@@ -237,18 +258,27 @@ public:
         {
             auto pin1 = nodes[info.node_from_id]->outputs[info.pin_from_number];
             auto pin2 = nodes[info.node_to_id]->inputs[info.pin_to_number];
-            Graph::addConnection(pin1, pin2);
+            ConnectionBuilder factory;
+            factory.addPin(pin1);
+            factory.addPin(pin2);
+            Connection *connection;
+            connection = factory.build();
+            connection->id = id;
+            connections[id] = connection;
+            Graph::id = std::max(id, Graph::id);
         }
     }
 
-    GraphInfo get_info(NodeEditorComponent *editor_component)
+    GraphInfo get_info(std::map<int, juce::Point<int>> positions)
     {
         GraphInfo info;
         for (auto &[id, n] : nodes)
         {
             auto node = (EditorNode *)n;
             GraphInfo::node node_info;
-            auto position = editor_component->getNodePosition(id);
+            node_info.x = 0;
+            node_info.y = 0;
+            auto position = positions[id];
             node_info.x = position.x;
             node_info.y = position.y;
             node_info.type_id = node->type_id;
