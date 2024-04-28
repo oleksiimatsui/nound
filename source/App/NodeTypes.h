@@ -19,7 +19,8 @@ enum class NodeTypes
     Concatenate,
     FunctionMath,
     Const,
-    Random
+    Random,
+    Oscillator
 };
 
 class AbstractNodeFactory
@@ -45,7 +46,7 @@ struct NodeNames
     static const std::string ReverbNode;
     static const std::string RandomNode;
     static const std::string WaveformNode;
-    static const std::string OscillatorNode;
+    static const std::string Oscillator;
     static const std::string AudioMathNode;
     static const std::string NumberMathNode;
     static const std::string Concatenate;
@@ -62,6 +63,7 @@ const std::string NodeNames::NumberMathNode = "Number Math";
 const std::string NodeNames::Concatenate = "Concatenate";
 const std::string NodeNames::FunctionMathNode = "Arithmetic";
 const std::string NodeNames::ConstNode = "Const";
+const std::string NodeNames::Oscillator = "Oscillator";
 
 class OutputNode : public EditorNode
 {
@@ -783,6 +785,68 @@ private:
     }
 };
 
+class OscillatorNode : public EditorNode, NumberInput::Listener
+{
+public:
+    enum InputKeys
+    {
+        frequency_,
+        phase_,
+        osc_,
+        seconds_,
+    };
+    enum OutputKeys
+    {
+        audio_out
+    };
+
+    OscillatorNode() : EditorNode()
+    {
+        header = NodeNames::Oscillator;
+        type_id = (int)NodeTypes::Oscillator;
+        registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
+        registerInput(InputKeys::osc_, "wave", PinType::Function);
+        registerInput(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)), (Value *)(&frequency));
+        registerInput(InputKeys::phase_, "phase", PinType::Number, new NumberInput(this, 0, 5000, &(phase)), (Value *)(&phase));
+        registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)), (Value *)(&t));
+    };
+
+    juce::Component *getInternal() override
+    {
+        return nullptr;
+    }
+
+private:
+    float frequency = 440;
+    float phase = 0;
+    float t = 1;
+    F *wave = nullptr;
+
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
+    {
+        if (pin == inputs[InputKeys::frequency_])
+        {
+            frequency = std::any_cast<float>(data);
+            ((NumberInput *)input_components[InputKeys::frequency_])->update();
+        }
+        if (pin == inputs[InputKeys::seconds_])
+        {
+            t = std::any_cast<float>(data);
+            ((NumberInput *)input_components[InputKeys::seconds_])->update();
+        }
+        if (pin == inputs[InputKeys::osc_])
+        {
+            wave = std::any_cast<F *>(data);
+        }
+        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
+        {
+            auto fs = new Osc(t, frequency, phase, &wave);
+            Value source = (StartableSource *)(fs);
+            input->node->trigger(source, input);
+        }
+    }
+};
+
 class NoundTypesFactory : public TypesRecoverFactory
 {
 public:
@@ -798,6 +862,7 @@ public:
         factories[NodeTypes::FunctionMath] = new NodeFactory<FunctionMathNode>;
         factories[NodeTypes::Const] = new NodeFactory<ConstFunctionNode>;
         factories[NodeTypes::Random] = new NodeFactory<RandomNode>;
+        factories[NodeTypes::Oscillator] = new NodeFactory<OscillatorNode>;
     }
 
     EditorNode *getNode(int type_id) override
