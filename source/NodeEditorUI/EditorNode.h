@@ -69,29 +69,8 @@ public:
         return input_components[key];
     }
 
-    void assignInput(int key, std::string value)
-    {
-
-        ValueRef *vh = input_values[key];
-        vh->fromString(value);
-    }
-    virtual std::string getInputValue(int key)
-    {
-        return input_values[key]->toString();
-    }
-    virtual void assignInternal(std::vector<Value> values)
-    {
-    }
-
-    virtual std::string getInternalValue()
-    {
-        return "";
-    }
-
     int x, y;
     int type_id;
-
-protected:
     std::map<int, juce::Component *> input_components;
     std::map<int, ValueRef *> input_values;
 };
