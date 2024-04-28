@@ -3,7 +3,7 @@
 #include "Functions.h"
 
 template <class T>
-class ValueHolder
+class ValueHolder2
 {
 public:
     virtual T *getState() = 0;
@@ -423,7 +423,7 @@ public:
     StartableSource *s2;
     juce::AudioBuffer<float> temp1;
     juce::AudioBuffer<float> temp2;
-    ValueHolder<State> *stateholder;
+    ValueHolder2<State> *stateholder;
 };
 
 class ConcatenationSource : public StartableSource

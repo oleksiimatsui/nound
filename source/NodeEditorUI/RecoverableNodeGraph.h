@@ -17,8 +17,8 @@ struct GraphInfo
         int type_id;
         int x;
         int y;
-        std::map<int, Value> input_values;
-        std::vector<Value> internal_values;
+        std::map<int, std::string> input_values;
+        std::vector<std::string> internal_values;
     };
     struct connection
     {
@@ -43,43 +43,12 @@ std::ostream &operator<<(std::ostream &os, const GraphInfo &graph)
         const auto &node = pair.second;
         os << node.type_id << " " << node.x << " " << node.y << " ";
         os << node.input_values.size() << " ";
-        for (const auto &input_pair : node.input_values)
+        for (const auto &[id, value] : node.input_values)
         {
-            os << input_pair.first << " ";
-
-            // Serialize based on type
-            const std::type_info &info = input_pair.second.type();
-            if (info == typeid(int))
-            {
-                os << std::any_cast<int>(input_pair.second) << " ";
-            }
-            else if (info == typeid(double))
-            {
-                os << std::any_cast<double>(input_pair.second) << " ";
-            }
-            else if (info == typeid(std::string))
-            {
-                os << std::any_cast<std::string>(input_pair.second) << " ";
-            } // Add more types as needed
+            os << id << " ";
+            os << value << " ";
         }
         os << node.internal_values.size() << " ";
-        for (const auto &value : node.internal_values)
-        {
-            // Serialize based on type
-            const std::type_info &info = value.type();
-            if (info == typeid(int))
-            {
-                os << std::any_cast<int>(value) << " ";
-            }
-            else if (info == typeid(double))
-            {
-                os << std::any_cast<double>(value) << " ";
-            }
-            else if (info == typeid(std::string))
-            {
-                os << std::any_cast<std::string>(value) << " ";
-            } // Add more types as needed
-        }
     }
 
     // Serialize connections
@@ -117,40 +86,7 @@ std::istream &operator>>(std::istream &is, GraphInfo &graph)
             int key;
             std::string value_str;
             is >> key >> value_str;
-
-            if (value_str == "null")
-            {
-                // Handle null value
-                node.input_values[key] = std::any();
-            }
-            else
-            {
-                // Deserialize based on type
-                if (value_str == "int")
-                {
-                    int intValue;
-                    is >> intValue;
-                    node.input_values[key] = intValue;
-                }
-                else if (value_str == "double")
-                {
-                    double doubleValue;
-                    is >> doubleValue;
-                    node.input_values[key] = doubleValue;
-                }
-                else if (value_str == "float")
-                {
-                    float doubleValue;
-                    is >> doubleValue;
-                    node.input_values[key] = doubleValue;
-                }
-                else if (value_str == "string")
-                {
-                    std::string stringValue;
-                    is >> stringValue;
-                    node.input_values[key] = stringValue;
-                } // Add more types as needed
-            }
+            node.input_values[key] = value_str;
         }
 
         // Deserialize internal_values
@@ -160,40 +96,6 @@ std::istream &operator>>(std::istream &is, GraphInfo &graph)
         {
             std::string value_str;
             is >> value_str;
-
-            if (value_str == "null")
-            {
-                // Handle null value
-                node.internal_values.push_back(std::any());
-            }
-            else
-            {
-                // Deserialize based on type
-                if (value_str == "int")
-                {
-                    int intValue;
-                    is >> intValue;
-                    node.internal_values.push_back(intValue);
-                }
-                else if (value_str == "double")
-                {
-                    double doubleValue;
-                    is >> doubleValue;
-                    node.internal_values.push_back(doubleValue);
-                }
-                else if (value_str == "float")
-                {
-                    float doubleValue;
-                    is >> doubleValue;
-                    node.internal_values.push_back(doubleValue);
-                }
-                else if (value_str == "string")
-                {
-                    std::string stringValue;
-                    is >> stringValue;
-                    node.internal_values.push_back(stringValue);
-                } // Add more types as needed
-            }
         }
 
         graph.nodes[key] = node;
@@ -249,8 +151,11 @@ public:
             nodes[id] = node;
             node->id = id;
             Graph::id = std::max(id, Graph::id);
-            node->assignInputs(info.input_values);
-            node->assignInternals(info.internal_values);
+            for (auto &[in_id, val] : info.input_values)
+            {
+                node->assignInput(in_id, val);
+            }
+
             node->x = info.x;
             node->y = info.y;
         }
@@ -282,8 +187,14 @@ public:
             node_info.x = position.x;
             node_info.y = position.y;
             node_info.type_id = node->type_id;
-            node_info.input_values = node->getInputValues();
-            node_info.internal_values = node->getInternalValues();
+            for (auto &[id, n] : n->inputs)
+            {
+                node_info.input_values[id] = node->getInputValue(id);
+            }
+            // for (auto &[id, n] : n->internals)
+            // {
+            node_info.internal_values.push_back(node->getInternalValue());
+            //}
             info.nodes[id] = node_info;
         }
         for (auto &[id, c] : connections)

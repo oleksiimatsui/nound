@@ -189,12 +189,12 @@ public:
         type_id = (int)NodeTypes::Reverb;
         registerInput(InputKeys::audio_in, "audio", PinType::Audio);
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
-        registerInput(InputKeys::width, "width", PinType::Number, new NumberInput(this, 0, 1, &(p.width)), (Value *)&(p.width));
-        registerInput(InputKeys::damping, "damping", PinType::Number, new NumberInput(this, 0, 1, &(p.damping)), (Value *)&(p.width));
-        registerInput(InputKeys::dryLevel, "dryLevel", PinType::Number, new NumberInput(this, 0, 1, &(p.dryLevel)), (Value *)&(p.width));
-        registerInput(InputKeys::freezeMode, "freezeMode", PinType::Number, new NumberInput(this, 0, 1, &(p.freezeMode)), (Value *)&(p.width));
-        registerInput(InputKeys::roomSize, "roomSize", PinType::Number, new NumberInput(this, 0, 1, &(p.roomSize)), (Value *)&(p.width));
-        registerInput(InputKeys::wetLevel, "wetLevel", PinType::Number, new NumberInput(this, 0, 1, &(p.wetLevel)), (Value *)&(p.width));
+        registerInput(InputKeys::width, "width", PinType::Number, new NumberInput(this, 0, 1, &(p.width)), new FloatRef(p.width));
+        registerInput(InputKeys::damping, "damping", PinType::Number, new NumberInput(this, 0, 1, &(p.damping)), new FloatRef(p.damping));
+        registerInput(InputKeys::dryLevel, "dryLevel", PinType::Number, new NumberInput(this, 0, 1, &(p.dryLevel)), new FloatRef(p.dryLevel));
+        registerInput(InputKeys::freezeMode, "freezeMode", PinType::Number, new NumberInput(this, 0, 1, &(p.freezeMode)), new FloatRef(p.freezeMode));
+        registerInput(InputKeys::roomSize, "roomSize", PinType::Number, new NumberInput(this, 0, 1, &(p.roomSize)), new FloatRef(p.roomSize));
+        registerInput(InputKeys::wetLevel, "wetLevel", PinType::Number, new NumberInput(this, 0, 1, &(p.wetLevel)), new FloatRef(p.wetLevel));
 
         valueChanged();
     };
@@ -248,7 +248,7 @@ public:
         header = NodeNames::RandomNode;
         type_id = (int)NodeTypes::Random;
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
-        registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)), (Value *)(&t));
+        registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)), new FloatRef(t));
     };
     juce::Component *getInternal() override
     {
@@ -353,7 +353,7 @@ private:
     }
 };
 
-class AudioMathNode : public EditorNode, public ValueHolder<MathAudioSource::State>
+class AudioMathNode : public EditorNode, public ValueHolder2<MathAudioSource::State>
 {
 public:
     enum InputKeys
@@ -481,8 +481,8 @@ public:
         c = nullptr;
         header = NodeNames::NumberMathNode;
         type_id = (int)NodeTypes::NumberMath;
-        registerInput(InputKeys::number_1, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val1)), (Value *)&(val1));
-        registerInput(InputKeys::number_2, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val2)), (Value *)&(val2));
+        registerInput(InputKeys::number_1, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val1)), new FloatRef(val1));
+        registerInput(InputKeys::number_2, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val2)), new FloatRef(val2));
         registerOutput(OutputKeys::number_out, "number", PinType::Number);
     };
     enum Operations
@@ -758,7 +758,7 @@ public:
         t = 0;
         fs = new Const(t);
         registerOutput(OutputKeys::func, "number", PinType::Function);
-        registerInput(InputKeys::number, "", PinType::Number, new NumberInput(this, 0, 5000, &(t)), (Value *)&(t));
+        registerInput(InputKeys::number, "", PinType::Number, new NumberInput(this, 0, 5000, &(t)), new FloatRef(t));
     };
     juce::Component *getInternal() override
     {
@@ -806,9 +806,9 @@ public:
         type_id = (int)NodeTypes::Oscillator;
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
         registerInput(InputKeys::osc_, "wave", PinType::Function);
-        registerInput(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)), (Value *)(&frequency));
-        registerInput(InputKeys::phase_, "phase", PinType::Number, new NumberInput(this, 0, 5000, &(phase)), (Value *)(&phase));
-        registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)), (Value *)(&t));
+        registerInput(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)), new FloatRef(frequency));
+        registerInput(InputKeys::phase_, "phase", PinType::Number, new NumberInput(this, 0, 5000, &(phase)), new FloatRef(phase));
+        registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)), new FloatRef(t));
     };
 
     juce::Component *getInternal() override

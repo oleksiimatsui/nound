@@ -1,6 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "NodeGraph.h"
+#include "ValueRef.h"
 
 enum PinType
 {
@@ -23,6 +24,9 @@ public:
         for (auto &[_, n] : input_components)
             delete n;
         input_components.clear();
+        for (auto &[_, n] : input_values)
+            delete n;
+        input_values.clear();
     }
 
     virtual juce::Component *getInternal()
@@ -30,17 +34,13 @@ public:
         return nullptr;
     };
 
-    void registerInput(int key, const std::string &name, int type, juce::Component *c, Value *value)
+    void registerInput(int key, const std::string &name, int type, juce::Component *c, ValueRef *val)
     {
         Node::registerInput(key, name, type);
         input_components[key] = c;
-        input_values[key] = value;
+        input_values[key] = val;
     }
-    // void registerInput(int key, const std::string &name, int type, juce::Component *c)
-    // {
-    //     Node::registerInput(key, name, type);
-    //     input_components[key] = c;
-    // }
+
     void registerInput(int key, const std::string &name, int type)
     {
         Node::registerInput(key, name, type);
@@ -69,24 +69,23 @@ public:
         return input_components[key];
     }
 
-    virtual void assignInputs(std::map<int, Value> values)
+    void assignInput(int key, std::string value)
+    {
+
+        ValueRef *vh = input_values[key];
+        vh->fromString(value);
+    }
+    virtual std::string getInputValue(int key)
+    {
+        return input_values[key]->toString();
+    }
+    virtual void assignInternal(std::vector<Value> values)
     {
     }
-    virtual void assignInternals(std::vector<Value> values)
+
+    virtual std::string getInternalValue()
     {
-    }
-    virtual std::map<int, Value> getInputValues()
-    {
-        std::map<int, Value> res;
-        for (auto &[id, val] : input_values)
-        {
-            res[id] = &val;
-        }
-        return res;
-    }
-    virtual std::vector<Value> getInternalValues()
-    {
-        return std::vector<Value>();
+        return "";
     }
 
     int x, y;
@@ -94,5 +93,5 @@ public:
 
 protected:
     std::map<int, juce::Component *> input_components;
-    std::map<int, Value *> input_values;
+    std::map<int, ValueRef *> input_values;
 };
