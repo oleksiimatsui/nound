@@ -21,10 +21,15 @@ target_sources(App
     Functions.h
     AppTheme.cpp
     Main.cpp
-    GraphRecoverer.h
+    GraphRecoverer.h 
     NodeTypesFactory.h
     NodeTypesRegistry.h
-)
+    Images.h
+) 
+
+# Copy assets to the current working directory
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/App_artefacts)
+
 
 target_compile_definitions(App
     PRIVATE

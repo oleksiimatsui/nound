@@ -10,7 +10,7 @@ namespace App
         backgroundColor = juce::Colour::fromRGB(92, 87, 93);
         textColor = juce::Colour::fromRGB(255, 255, 255);
         dropdownMouseoverBackgroundColor = juce::Colour::fromRGB(62, 62, 62);
-        darkerColor = juce::Colour::fromRGBA(58, 59, 67, 0.72 * 255);
+        darkerColor = juce::Colour::fromRGB(53, 49, 58);
         hoveredColor = juce::Colour::fromRGBA(0, 0, 0, 0.5 * 255);
     };
 

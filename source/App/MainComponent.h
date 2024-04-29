@@ -191,10 +191,16 @@ public:
         play_panel.setMargin(8);
         play_panel.setPadding(8);
         play_panel.addElements(std::vector<juce::Component *>({&play_button, &stop_button}));
-        play_button.setButtonText(">");
+
+        juce::Image play_img = getImageFromAssets("play_white.png");
+        play_button.setImages(true, true, true, play_img, 1.0f, juce::Colour(), play_img, 0.5f, juce::Colour(), play_img, 0.5f, juce::Colour());
+        play_button.setSize(50, 100);
         play_button.onClick = [this]
         { play(); };
-        stop_button.setButtonText("||");
+
+        juce::Image pause_img = getImageFromAssets("pause_white.png");
+        stop_button.setImages(true, true, true, pause_img, 1.0f, juce::Colour(), pause_img, 0.5f, juce::Colour(), pause_img, 0.5f, juce::Colour());
+        stop_button.setSize(50, 100);
         stop_button.onClick = [this]
         {
             stop();
@@ -292,8 +298,8 @@ public:
     {
         juce::FlexBox fb;
         fb.flexDirection = juce::FlexBox::Direction::column;
-        play_button.changeWidthToFitText();
-        stop_button.changeWidthToFitText();
+        // play_button.changeWidthToFitText();
+        // stop_button.changeWidthToFitText();
         file_button.changeWidthToFitText();
         fb.items.add(juce::FlexItem(getWidth(), 25, toolbar));
         fb.items.add(juce::FlexItem(getWidth(), 50, play_panel).withMargin(0));
@@ -339,6 +345,13 @@ public:
         }
     }
 
+    juce::Image getImageFromAssets(std::string str)
+    {
+        juce::File imageFile = juce::File::getCurrentWorkingDirectory().getParentDirectory().getChildFile("assets/" + str);
+        juce::Image image = juce::ImageFileFormat::loadFrom(imageFile);
+        return image;
+    }
+
 private:
     SoundOutputSource player;
     std::unique_ptr<RecoverableNodeGraph> g;
@@ -346,8 +359,8 @@ private:
     NodeEditorComponent node_editor;
     DropdownComponent dropdown_panel;
     StretchComponent stretcher;
-    juce::TextButton play_button;
-    juce::TextButton stop_button;
+    juce::ImageButton play_button;
+    juce::ImageButton stop_button;
     MenuButton file_button;
     FlexWithColor toolbar;
     FlexWithColor play_panel;
