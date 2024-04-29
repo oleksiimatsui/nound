@@ -57,22 +57,23 @@ public:
 
         // i.push_back(new Item("Triggers", std::vector<Item *>({new ItemWithNode("Start", std::vector<Item *>(), new NodeFactory<StartNode>), new ItemWithNode("Wait", std::vector<Item *>(), new NodeFactory<WaitNode>)})));
 
-        i.push_back(new ItemWithNode(NodeNames::OutputNode, std::vector<Item *>(), new NodeFactory<OutputNode>, g));
+        i.push_back(new Item("Numbers", std::vector<Item *>(
+                                            {
+                                                new ItemWithNode(NodeNames::NumberMathNode, std::vector<Item *>(), new NodeFactory<NumberMathNode>, g),
+                                            })));
+
         i.push_back(new Item("Functions", std::vector<Item *>(
                                               {new ItemWithNode(NodeNames::WaveformNode, std::vector<Item *>(), new NodeFactory<WaveformNode>, g),
                                                new ItemWithNode(NodeNames::FunctionMathNode, std::vector<Item *>(), new NodeFactory<FunctionMathNode>, g),
                                                new ItemWithNode(NodeNames::ConstNode, std::vector<Item *>(), new NodeFactory<ConstFunctionNode>, g)})));
         i.push_back(new Item("Audio", std::vector<Item *>(
-                                          {
-                                              new ItemWithNode(NodeNames::FileReader, std::vector<Item *>(), new NodeFactory<FileReaderNode>, g),
-                                              new ItemWithNode(NodeNames::RandomNode, std::vector<Item *>(), new NodeFactory<RandomNode>, g),
-                                              new ItemWithNode(NodeNames::Oscillator, std::vector<Item *>(), new NodeFactory<OscillatorNode>, g),
-                                              new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeFactory<ReverbNode>, g),
-                                              new ItemWithNode(NodeNames::AudioMathNode, std::vector<Item *>(), new NodeFactory<AudioMathNode>, g),
-                                              new ItemWithNode(NodeNames::Concatenate, std::vector<Item *>(), new NodeFactory<ConcatenateNode>, g),
-                                          })));
-
-        i.push_back(new ItemWithNode(NodeNames::NumberMathNode, std::vector<Item *>(), new NodeFactory<NumberMathNode>, g));
+                                          {new ItemWithNode(NodeNames::FileReader, std::vector<Item *>(), new NodeFactory<FileReaderNode>, g),
+                                           new ItemWithNode(NodeNames::RandomNode, std::vector<Item *>(), new NodeFactory<RandomNode>, g),
+                                           new ItemWithNode(NodeNames::Oscillator, std::vector<Item *>(), new NodeFactory<OscillatorNode>, g),
+                                           new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeFactory<ReverbNode>, g),
+                                           new ItemWithNode(NodeNames::AudioMathNode, std::vector<Item *>(), new NodeFactory<AudioMathNode>, g),
+                                           new ItemWithNode(NodeNames::Concatenate, std::vector<Item *>(), new NodeFactory<ConcatenateNode>, g),
+                                           new ItemWithNode(NodeNames::OutputNode, std::vector<Item *>(), new NodeFactory<OutputNode>, g)})));
 
         return i;
     }
