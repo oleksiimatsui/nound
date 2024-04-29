@@ -23,7 +23,8 @@ target_sources(${TargetName}
         PinComponent.h
         EditorNode.h
         RecoverableNodeGraph.h
-        ValueRef
+        ValueRef.h
+        SettableComponent.h
 )
 
 

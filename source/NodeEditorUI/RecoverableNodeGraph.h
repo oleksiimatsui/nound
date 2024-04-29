@@ -153,7 +153,7 @@ public:
             Graph::id = std::max(id, Graph::id);
             for (auto &[in_id, val] : info.input_values)
             {
-                node->input_values[in_id]->fromString(val);
+                node->input_components[in_id]->fromString(val);
                 // node->input_components[in_id]->
             }
 
@@ -188,9 +188,10 @@ public:
             node_info.x = position.x;
             node_info.y = position.y;
             node_info.type_id = node->type_id;
-            for (auto &[pin_id, value] : node->input_values)
+            for (auto &[pin_id, c] : node->input_components)
             {
-                node_info.input_values[pin_id] = value->toString();
+                if (c != nullptr)
+                    node_info.input_values[pin_id] = c->toString();
             }
             // for (auto &[id, n] : n->internals)
             // {

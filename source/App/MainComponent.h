@@ -5,7 +5,7 @@
 #include "NodeEditorComponent.h"
 #include "NodeDropdown.h"
 #include "NodeGraph.h"
-#include "RecoverableNodeGraph.h"
+#include "NodeTypesFactory.h"
 #include <fstream>
 
 class FlexWithColor : public juce::Component

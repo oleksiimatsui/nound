@@ -2,6 +2,7 @@
 #include <JuceHeader.h>
 #include "NodeGraph.h"
 #include "ValueRef.h"
+#include <SettableComponent.h>
 
 enum PinType
 {
@@ -24,9 +25,6 @@ public:
         for (auto &[_, n] : input_components)
             delete n;
         input_components.clear();
-        for (auto &[_, n] : input_values)
-            delete n;
-        input_values.clear();
     }
 
     virtual juce::Component *getInternal()
@@ -34,11 +32,11 @@ public:
         return nullptr;
     };
 
-    void registerInput(int key, const std::string &name, int type, juce::Component *c, ValueRef *val)
+    void registerInput(int key, const std::string &name, int type, SettableComponent *c)
     {
         Node::registerInput(key, name, type);
-        input_components[key] = c;
-        input_values[key] = val;
+        if (c != nullptr)
+            input_components[key] = c;
     }
 
     void registerInput(int key, const std::string &name, int type)
@@ -71,6 +69,6 @@ public:
 
     int x, y;
     int type_id;
-    std::map<int, juce::Component *> input_components;
-    std::map<int, ValueRef *> input_values;
+    std::map<int, SettableComponent *> input_components;
+    // std::map<int, ValueRef *> input_values;
 };

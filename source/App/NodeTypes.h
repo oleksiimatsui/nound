@@ -6,22 +6,8 @@
 #include "Theme.h"
 #include "Components.h"
 #include "Sources.h"
-#include "RecoverableNodeGraph.h"
 
-enum class NodeTypes
-{
-    Output,
-    FileReader,
-    Reverb,
-    Waveform,
-    AudioMath,
-    NumberMath,
-    Concatenate,
-    FunctionMath,
-    Const,
-    Random,
-    Oscillator
-};
+#include "NodeTypesRegistry.h"
 
 class AbstractNodeFactory
 {
@@ -38,32 +24,6 @@ public:
         return new T;
     }
 };
-
-struct NodeNames
-{
-    static const std::string OutputNode;
-    static const std::string FileReader;
-    static const std::string ReverbNode;
-    static const std::string RandomNode;
-    static const std::string WaveformNode;
-    static const std::string Oscillator;
-    static const std::string AudioMathNode;
-    static const std::string NumberMathNode;
-    static const std::string Concatenate;
-    static const std::string FunctionMathNode;
-    static const std::string ConstNode;
-};
-const std::string NodeNames::OutputNode = "Output";
-const std::string NodeNames::FileReader = "File Reader";
-const std::string NodeNames::ReverbNode = "Reverb";
-const std::string NodeNames::RandomNode = "Random";
-const std::string NodeNames::WaveformNode = "Basic Waveform";
-const std::string NodeNames::AudioMathNode = "Audio Math";
-const std::string NodeNames::NumberMathNode = "Number Math";
-const std::string NodeNames::Concatenate = "Concatenate";
-const std::string NodeNames::FunctionMathNode = "Arithmetic";
-const std::string NodeNames::ConstNode = "Const";
-const std::string NodeNames::Oscillator = "Oscillator";
 
 class OutputNode : public EditorNode
 {
@@ -97,7 +57,7 @@ private:
     }
 };
 
-class FileReaderNode : public EditorNode, public FileInputListener
+class FileReaderNode : public EditorNode, public FileInput::Listener
 {
 public:
     enum InputKeys
@@ -111,7 +71,8 @@ public:
     FileReaderNode() : EditorNode()
     {
         currentAudioFile = nullptr;
-        internal = new FileInput(this);
+        internal = nullptr;
+        //    internal = new FileInput(this);
         header = NodeNames::FileReader;
         type_id = (int)NodeTypes::FileReader;
         outputs[OutputKeys::audio_] = new Output(OutputKeys::audio_, "audio", PinType::Audio, this);
@@ -124,10 +85,8 @@ public:
     ~FileReaderNode()
     {
     }
-    void setFile(juce::URL *resource, std::string _name) override
-    {
-        currentAudioFile = resource;
-        name = _name;
+    void setFile() override {
+
     };
 
 private:
@@ -189,12 +148,12 @@ public:
         type_id = (int)NodeTypes::Reverb;
         registerInput(InputKeys::audio_in, "audio", PinType::Audio);
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
-        registerInput(InputKeys::width, "width", PinType::Number, new NumberInput(this, 0, 1, &(p.width)), new FloatRef(p.width));
-        registerInput(InputKeys::damping, "damping", PinType::Number, new NumberInput(this, 0, 1, &(p.damping)), new FloatRef(p.damping));
-        registerInput(InputKeys::dryLevel, "dryLevel", PinType::Number, new NumberInput(this, 0, 1, &(p.dryLevel)), new FloatRef(p.dryLevel));
-        registerInput(InputKeys::freezeMode, "freezeMode", PinType::Number, new NumberInput(this, 0, 1, &(p.freezeMode)), new FloatRef(p.freezeMode));
-        registerInput(InputKeys::roomSize, "roomSize", PinType::Number, new NumberInput(this, 0, 1, &(p.roomSize)), new FloatRef(p.roomSize));
-        registerInput(InputKeys::wetLevel, "wetLevel", PinType::Number, new NumberInput(this, 0, 1, &(p.wetLevel)), new FloatRef(p.wetLevel));
+        registerInput(InputKeys::width, "width", PinType::Number, new NumberInput(this, 0, 1, new FloatRef(p.width)));
+        registerInput(InputKeys::damping, "damping", PinType::Number, new NumberInput(this, 0, 1, new FloatRef(p.damping)));
+        registerInput(InputKeys::dryLevel, "dryLevel", PinType::Number, new NumberInput(this, 0, 1, new FloatRef(p.dryLevel)));
+        registerInput(InputKeys::freezeMode, "freezeMode", PinType::Number, new NumberInput(this, 0, 1, new FloatRef(p.freezeMode)));
+        registerInput(InputKeys::roomSize, "roomSize", PinType::Number, new NumberInput(this, 0, 1, new FloatRef(p.roomSize)));
+        registerInput(InputKeys::wetLevel, "wetLevel", PinType::Number, new NumberInput(this, 0, 1, new FloatRef(p.wetLevel)));
 
         valueChanged();
     };
@@ -248,7 +207,7 @@ public:
         header = NodeNames::RandomNode;
         type_id = (int)NodeTypes::Random;
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
-        registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)), new FloatRef(t));
+        registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(t)));
     };
     juce::Component *getInternal() override
     {
@@ -481,8 +440,8 @@ public:
         c = nullptr;
         header = NodeNames::NumberMathNode;
         type_id = (int)NodeTypes::NumberMath;
-        registerInput(InputKeys::number_1, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val1)), new FloatRef(val1));
-        registerInput(InputKeys::number_2, "number", PinType::Number, new NumberInput(this, 0, 5000, &(val2)), new FloatRef(val2));
+        registerInput(InputKeys::number_1, "number", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(val1)));
+        registerInput(InputKeys::number_2, "number", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(val2)));
         registerOutput(OutputKeys::number_out, "number", PinType::Number);
     };
     enum Operations
@@ -758,7 +717,7 @@ public:
         t = 0;
         fs = new Const(t);
         registerOutput(OutputKeys::func, "number", PinType::Function);
-        registerInput(InputKeys::number, "", PinType::Number, new NumberInput(this, 0, 5000, &(t)), new FloatRef(t));
+        registerInput(InputKeys::number, "", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(t)));
     };
     juce::Component *getInternal() override
     {
@@ -806,9 +765,9 @@ public:
         type_id = (int)NodeTypes::Oscillator;
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
         registerInput(InputKeys::osc_, "wave", PinType::Function);
-        registerInput(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, &(frequency)), new FloatRef(frequency));
-        registerInput(InputKeys::phase_, "phase", PinType::Number, new NumberInput(this, 0, 5000, &(phase)), new FloatRef(phase));
-        registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, &(t)), new FloatRef(t));
+        registerInput(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(frequency)));
+        registerInput(InputKeys::phase_, "phase", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(phase)));
+        registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(t)));
     };
 
     juce::Component *getInternal() override
@@ -844,39 +803,5 @@ private:
             Value source = (StartableSource *)(fs);
             input->node->trigger(source, input);
         }
-    }
-};
-
-class NoundTypesFactory : public TypesRecoverFactory
-{
-public:
-    NoundTypesFactory()
-    {
-        factories[NodeTypes::Output] = new NodeFactory<OutputNode>;
-        factories[NodeTypes::Reverb] = new NodeFactory<ReverbNode>;
-        factories[NodeTypes::Waveform] = new NodeFactory<WaveformNode>;
-        factories[NodeTypes::FileReader] = new NodeFactory<FileReaderNode>;
-        factories[NodeTypes::AudioMath] = new NodeFactory<AudioMathNode>;
-        factories[NodeTypes::NumberMath] = new NodeFactory<NumberMathNode>;
-        factories[NodeTypes::Concatenate] = new NodeFactory<ConcatenateNode>;
-        factories[NodeTypes::FunctionMath] = new NodeFactory<FunctionMathNode>;
-        factories[NodeTypes::Const] = new NodeFactory<ConstFunctionNode>;
-        factories[NodeTypes::Random] = new NodeFactory<RandomNode>;
-        factories[NodeTypes::Oscillator] = new NodeFactory<OscillatorNode>;
-    }
-
-    EditorNode *getNode(int type_id) override
-    {
-        return factories[(NodeTypes)type_id]->create();
-    }
-    std::map<NodeTypes, AbstractNodeFactory *> factories;
-
-    ~NoundTypesFactory()
-    {
-        for (auto &[_, f] : factories)
-        {
-            delete f;
-        }
-        factories.clear();
     }
 };

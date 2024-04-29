@@ -1,15 +1,18 @@
 #pragma once
 #include <JuceHeader.h>
 #include "Theme.h"
-class FileInputListener
+#include "SettableComponent.h"
+#include "ValueRef.h"
+
+class FileInput : public SettableComponent
 {
 public:
-    virtual void setFile(juce::URL *resource, std::string name) = 0;
-};
-class FileInput : public juce::Component
-{
-public:
-    FileInput(FileInputListener *l)
+    class Listener
+    {
+    public:
+        virtual void setFile() = 0;
+    };
+    FileInput(Listener *l, StringRef *vr) : SettableComponent(vr)
     {
         listener = l;
         button.onClick = [this]()
@@ -69,28 +72,26 @@ public:
                                               {
                                                   auto u = fc.getURLResult();
                                                   auto name = u.getLocalFile().getFullPathName();
-                                                  setFile (std::move (u), name);
+                                                  setFile (name);
                                               }
 
                                               filechooser = nullptr; }, nullptr);
     }
-    void setFile(juce::URL resource, juce::String name)
+    void setFile(juce::String name)
     {
-        currentAudioFile = std::move(resource);
-        listener->setFile(&currentAudioFile, name.toStdString());
-        label.setText(name, juce::NotificationType::sendNotification);
+        fromString(name.toStdString());
+        listener->setFile();
     }
 
 private:
     juce::TextButton button{"Browse"};
     juce::Label label{{}, "file is not chosen"};
-    FileInputListener *listener;
-    juce::URL currentAudioFile;
+    Listener *listener;
     std::unique_ptr<juce::FileChooser> filechooser = nullptr;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FileInput);
 };
 
-class NumberInput : public juce::Component, public juce::Slider::Listener
+class NumberInput : public SettableComponent, public juce::Slider::Listener
 {
 public:
     class Listener
@@ -105,10 +106,10 @@ public:
         *value = slider->getValue();
         listener->valueChanged();
     }
-    NumberInput(NumberInput::Listener *_node, float min, float max, float *val)
+    NumberInput(NumberInput::Listener *_node, float min, float max, FloatRef *val) : SettableComponent(val)
     {
         listener = _node;
-        value = val;
+        value = &(val->value);
         slider.setRange(min, max);
         slider.addListener(this);
         slider.setSliderStyle(juce::Slider::LinearBar);
@@ -123,7 +124,7 @@ public:
     {
         slider.setBounds(getLocalBounds());
     };
-    void update()
+    void update() override
     {
         auto fn = [this]()
         {

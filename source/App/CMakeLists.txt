@@ -22,6 +22,8 @@ target_sources(App
     AppTheme.cpp
     Main.cpp
     GraphRecoverer.h
+    NodeTypesFactory.h
+    NodeTypesRegistry.h
 )
 
 target_compile_definitions(App
