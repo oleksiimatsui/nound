@@ -291,6 +291,7 @@ public:
     }
     void Start() override
     {
+        N = 0;
     }
     void Stop() override
     {

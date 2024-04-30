@@ -292,6 +292,30 @@ public:
     }
     void export_graph()
     {
+        auto fileToSave = juce::File::createTempFile("audio.wav");
+
+        if (fileToSave.createDirectory().wasOk())
+        {
+            fileToSave = fileToSave.getChildFile("audio.wav");
+            fileToSave.deleteFile();
+            juce::FileOutputStream outStream(fileToSave);
+        }
+
+        fc.reset(new juce::FileChooser("Export",
+                                       juce::File::getCurrentWorkingDirectory().getChildFile(fileToSave.getFileName()),
+                                       "*.wav", true));
+
+        fc->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles,
+                        [this, fileToSave](const juce::FileChooser &chooser)
+                        {
+                            auto result = chooser.getURLResult();
+                            auto name = result.isEmpty() ? juce::String()
+                                                         : (result.isLocalFile() ? result.getLocalFile().getFullPathName()
+                                                                                 : result.toString(true));
+
+                            selected_file_path = name;
+                            exportToFile(name.toStdString());
+                        });
     }
 
     void resized() override
@@ -350,6 +374,58 @@ public:
         juce::File imageFile = juce::File::getCurrentWorkingDirectory().getParentDirectory().getChildFile("assets/" + str);
         juce::Image image = juce::ImageFileFormat::loadFrom(imageFile);
         return image;
+    }
+
+    void exportToFile(std::string path)
+    {
+        juce::File file = juce::File(path);
+        if (file.existsAsFile())
+            file.deleteFile();
+        juce::AudioBuffer<float> buffer;
+        juce::WavAudioFormat format;
+        std::unique_ptr<juce::AudioFormatWriter> writer;
+        auto graph = g.get();
+        Value d = nullptr;
+        for (auto &[id, n] : graph->getNodes())
+        {
+            if (graph->getInputConnectionsOfNode(id).size() == 0)
+            {
+                n->trigger(d, nullptr);
+            }
+        };
+        StartableSource *output = nullptr;
+        for (auto &[id, n] : g.get()->getNodes())
+        {
+            if (auto out = dynamic_cast<OutputNode *>(n))
+            {
+                output = (out->result);
+            }
+        };
+        if (output == nullptr)
+            return;
+        //    std::unique_ptr<juce::FileOutputStream> filestream(file.createOutputStream());
+        // filestream->setPosition(0);
+        // filestream->truncate();
+
+        const int size = 480;
+        writer.reset(format.createWriterFor(new juce::FileOutputStream(file),
+                                            48000.0,
+                                            2,
+                                            24,
+                                            {},
+                                            0));
+        output->prepareToPlay(480, 48000);
+        output->Start();
+        while (output->isPlaying())
+        {
+            juce::AudioBuffer<float> buffer;
+            buffer.setSize(2, 480);
+            output->getNextAudioBlock(juce::AudioSourceChannelInfo(&buffer, 0, size));
+
+            if (writer != nullptr)
+                writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples());
+        }
+        output->releaseResources();
     }
 
 private:
