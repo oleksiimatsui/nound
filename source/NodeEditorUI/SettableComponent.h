@@ -7,6 +7,11 @@ class SettableComponent : public juce::Component, public ValueRefParser
 {
 public:
     SettableComponent(ValueRefParser *vr) : value_ref(vr){};
+
+    ~SettableComponent() override
+    {
+    }
+
     void setComponent(Component *c)
     {
         component = c;

@@ -91,17 +91,20 @@ public:
     double get(double rad) override
     {
         rad = use_f(0, rad);
-        double x = std::fmod(rad, 2.0f * juce::MathConstants<double>::pi);
-        return (x >= juce::MathConstants<double>::twoPi) ? juce::jmap(x,
-                                                                      (juce::MathConstants<double>::pi),
-                                                                      (juce::MathConstants<double>::twoPi),
-                                                                      (-1.0),
-                                                                      (1.0))
-                                                         : juce::jmap(x,
-                                                                      (0.0),
-                                                                      (juce::MathConstants<double>::pi),
-                                                                      (1.0),
-                                                                      (-1.0));
+        rad = rad + juce::MathConstants<double>::pi / 2.0;
+
+        double x = std::fmod(rad, 2.0f * juce::MathConstants<double>::pi) - juce::MathConstants<double>::pi;
+        double res = (x < 0) ? juce::jmap(x,
+                                          double(-juce::MathConstants<double>::pi),
+                                          double(0),
+                                          double(-1),
+                                          double(1))
+                             : juce::jmap(x,
+                                          double(0),
+                                          double(juce::MathConstants<double>::pi),
+                                          double(1),
+                                          double(-1));
+        return res;
     }
 };
 

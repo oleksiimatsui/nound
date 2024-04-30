@@ -255,7 +255,6 @@ public:
         samples_count = 0;
         n = 0;
         period = 0;
-        N = 0;
         sampleRate = 0;
         waveform = w;
     }
@@ -282,29 +281,23 @@ public:
                 buffer[sample] = currentSample;
             }
             n++;
-            N++;
-            if (frequency * period * n >= 1)
-            {
-                n = 0;
-            }
         }
     }
     void Start() override
     {
-        N = 0;
+        n = 0;
     }
     void Stop() override
     {
     }
     bool isPlaying() override
     {
-        return N <= samples_count;
+        return n <= samples_count;
     }
     float &frequency;
     float &phase;
     double period;
     int n;
-    int N;
     double sampleRate;
     float time;
     int samples_count;
