@@ -49,6 +49,10 @@ std::ostream &operator<<(std::ostream &os, const GraphInfo &graph)
             os << value << " ";
         }
         os << node.internal_values.size() << " ";
+        for (const auto &value : node.internal_values)
+        {
+            os << value << " ";
+        }
     }
 
     // Serialize connections
@@ -94,8 +98,9 @@ std::istream &operator>>(std::istream &is, GraphInfo &graph)
         is >> num_internal_values;
         for (int j = 0; j < num_internal_values; ++j)
         {
-            std::string value_str;
-            is >> value_str;
+            std::string val;
+            is >> val;
+            node.internal_values.push_back(val);
         }
 
         graph.nodes[key] = node;
@@ -133,8 +138,6 @@ public:
     }
     void clear_graph()
     {
-        // for (auto &[id, n] : nodes)
-        //     deleteNode(id);
         for (auto &[_, n] : nodes)
             delete n;
         nodes.clear();
@@ -154,9 +157,14 @@ public:
             for (auto &[in_id, val] : info.input_values)
             {
                 node->input_components[in_id]->fromString(val);
-                // node->input_components[in_id]->
+                node->input_components[in_id]->update();
             }
-
+            for (int i = 0; i < info.internal_values.size(); i++)
+            {
+                auto &string = info.internal_values[i];
+                node->internal_components[i]->fromString(string);
+                node->internal_components[i]->update();
+            }
             node->x = info.x;
             node->y = info.y;
         }
@@ -193,10 +201,11 @@ public:
                 if (c != nullptr)
                     node_info.input_values[pin_id] = c->toString();
             }
-            // for (auto &[id, n] : n->internals)
-            // {
-            //  node_info.internal_values.push_back(node->getInternalValue());
-            //}
+            for (auto &internal : node->internal_components)
+            {
+                if (internal != nullptr)
+                    node_info.internal_values.push_back(internal->toString());
+            }
             info.nodes[id] = node_info;
         }
         for (auto &[id, c] : connections)

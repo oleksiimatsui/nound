@@ -38,10 +38,6 @@ public:
         type_id = (int)NodeTypes::Output;
         inputs[InputKeys::audio_] = new Input(InputKeys::audio_, "audio", PinType::Audio, this);
     };
-    juce::Component *getInternal() override
-    {
-        return nullptr;
-    }
     // SoundOutputSource source;
     StartableSource *result;
 
@@ -71,29 +67,28 @@ public:
     FileReaderNode() : EditorNode()
     {
         currentAudioFile = nullptr;
-        internal = nullptr;
-        //    internal = new FileInput(this);
+        registerInternal(new FileInput(new StringRef(name), this));
         header = NodeNames::FileReader;
         type_id = (int)NodeTypes::FileReader;
         outputs[OutputKeys::audio_] = new Output(OutputKeys::audio_, "audio", PinType::Audio, this);
     };
-    juce::Component *getInternal() override
-    {
-        return internal;
-    }
 
     ~FileReaderNode()
     {
     }
-    void setFile() override {
 
+    void fileChanged() override
+    {
+        auto fs = new FileSource();
+        fs->setFile(name);
+
+        source.reset(fs);
     };
 
 private:
     std::string name;
     juce::URL *currentAudioFile;
-    FileInput *internal;
-    std::vector<StartableSource *> sources;
+    std::unique_ptr<FileSource> source;
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
@@ -101,16 +96,10 @@ private:
         {
         }
         auto connection_inputs = graph->getInputsOfOutput(outputs[OutputKeys::audio_]);
-        for (auto &input : connection_inputs)
-        {
-            auto fs = new FileSource();
-            fs->setFile(name);
-            sources.push_back(fs);
-        }
         for (int i = 0; i < connection_inputs.size(); i++)
         {
             auto input = connection_inputs[i];
-            input->node->trigger((Value)sources[i], input);
+            input->node->trigger((Value)((StartableSource *)source.get()), input);
         }
     }
 };
@@ -139,7 +128,6 @@ public:
             r->r->setParameters(p);
         }
     }
-
     ReverbNode() : EditorNode()
     {
         int i = 0;
@@ -157,17 +145,11 @@ public:
 
         valueChanged();
     };
-
     ~ReverbNode()
     {
         for (auto &n : results)
             delete n;
         results.clear();
-    }
-
-    juce::Component *getInternal() override
-    {
-        return nullptr;
     }
 
 private:
@@ -209,10 +191,6 @@ public:
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
         registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(t)));
     };
-    juce::Component *getInternal() override
-    {
-        return nullptr;
-    }
 
 private:
     float t;
@@ -288,10 +266,6 @@ public:
         c->onChange = [this]
         { operationChanged(); };
     };
-    juce::Component *getInternal() override
-    {
-        return c;
-    }
     F *waveform;
 
 private:
@@ -312,7 +286,7 @@ private:
     }
 };
 
-class AudioMathNode : public EditorNode, public ValueHolder2<MathAudioSource::State>
+class AudioMathNode : public EditorNode, juce::ComboBox::Listener
 {
 public:
     enum InputKeys
@@ -324,21 +298,17 @@ public:
     {
         audio_out
     };
+
     AudioMathNode()
     {
-        states[Operations::add] = new MathAudioSource::Add();
-        states[Operations::divide] = new MathAudioSource::Divide();
-        states[Operations::substract] = new MathAudioSource::Substract();
-        states[Operations::multiply] = new MathAudioSource::Multiply();
-
         s1 = nullptr;
         s2 = nullptr;
-        c = nullptr;
         header = NodeNames::AudioMathNode;
         type_id = (int)NodeTypes::AudioMath;
         registerInput(InputKeys::audio_1, "audio", PinType::Audio);
         registerInput(InputKeys::audio_2, "audio", PinType::Audio);
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
+        registerInternal(new Selector(new IntRef(selected), this, std::vector<std::string>({"Add", "Subtract", "Multiply", "Divide"}), 1));
     };
     enum Operations
     {
@@ -347,50 +317,31 @@ public:
         multiply,
         divide
     };
-    juce::Component *getInternal() override
+
+    void comboBoxChanged(juce::ComboBox *c) override
     {
-        c = new juce::ComboBox();
-        c->setSize(1000, 20);
-        c->addItem("Add", Operations::add);
-        c->addItem("Subtract", Operations::substract);
-        c->addItem("Multiply", Operations::multiply);
-        c->addItem("Divide", Operations::divide);
-        c->setSelectedId(Operations::add);
-        c->onChange = [this]
-        { operationChanged(); };
-        return c;
-    }
-    void operationChanged()
-    {
-        //  state = &states[(Operations)c->getSelectedId()];
-        switch (c->getSelectedId())
+        switch (selected)
         {
         case Operations::add:
-            state = states[Operations::add];
+            state.reset(new MathAudioSource::Add());
             break;
         case Operations::substract:
-            state = states[Operations::substract];
+            state.reset(new MathAudioSource::Substract());
             break;
         case Operations::multiply:
-            state = states[Operations::multiply];
+            state.reset(new MathAudioSource::Multiply());
             break;
         case Operations::divide:
-            state = states[Operations::divide];
+            state.reset(new MathAudioSource::Divide());
             break;
         }
     };
-    std::unordered_map<Operations, MathAudioSource::State *> states;
-    MathAudioSource::State *getState() override
-    {
-        return state;
-    }
 
 private:
-    juce::ComboBox *c;
-    MathAudioSource::State *state;
+    int selected;
+    std::unique_ptr<MathAudioSource::State> state;
     StartableSource *s1;
     StartableSource *s2;
-
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (StartableSource *f = std::any_cast<StartableSource *>(data))
@@ -410,7 +361,7 @@ private:
                     auto s = new MathAudioSource();
                     s->s1 = s1;
                     s->s2 = s2;
-                    s->stateholder = this;
+                    s->state = &state;
                     Value source = (StartableSource *)(s);
                     input->node->trigger(source, input);
                 }
@@ -419,7 +370,7 @@ private:
     }
 };
 
-class NumberMathNode : public EditorNode, NumberInput::Listener
+class NumberMathNode : public EditorNode, juce::ComboBox::Listener, NumberInput::Listener
 {
 public:
     enum InputKeys
@@ -433,17 +384,13 @@ public:
     };
     NumberMathNode()
     {
-        states[Operations::add] = new MathAudioSource::Add();
-        states[Operations::divide] = new MathAudioSource::Divide();
-        states[Operations::substract] = new MathAudioSource::Substract();
-        states[Operations::multiply] = new MathAudioSource::Multiply();
-        c = nullptr;
         header = NodeNames::NumberMathNode;
         type_id = (int)NodeTypes::NumberMath;
         registerInput(InputKeys::number_1, "number", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(val1)));
         registerInput(InputKeys::number_2, "number", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(val2)));
         registerOutput(OutputKeys::number_out, "number", PinType::Number);
-    };
+        registerInternal(new Selector(new IntRef(selected_state), this, std::vector<std::string>({"Add", "Substract", "Multiply", "Divide"}), 1));
+    }
     enum Operations
     {
         add = 1,
@@ -451,56 +398,36 @@ public:
         multiply,
         divide
     };
-    juce::Component *getInternal() override
+
+    void comboBoxChanged(juce::ComboBox *c) override
     {
-        c = new juce::ComboBox();
-        c->setSize(1000, 20);
-        c->addItem("Add", Operations::add);
-        c->addItem("Subtract", Operations::substract);
-        c->addItem("Multiply", Operations::multiply);
-        c->addItem("Divide", Operations::divide);
-        c->setSelectedId(Operations::add);
-        c->onChange = [this]
-        { operationChanged(); };
-        return c;
-    }
-    void operationChanged()
-    {
-        //  state = &states[(Operations)c->getSelectedId()];
-        switch (c->getSelectedId())
+        switch (selected_state)
         {
         case Operations::add:
-            state = states[Operations::add];
+            state.reset(new MathAudioSource::Add());
             break;
         case Operations::substract:
-            state = states[Operations::substract];
+            state.reset(new MathAudioSource::Substract());
             break;
         case Operations::multiply:
-            state = states[Operations::multiply];
+            state.reset(new MathAudioSource::Multiply());
             break;
         case Operations::divide:
-            state = states[Operations::divide];
+            state.reset(new MathAudioSource::Divide());
             break;
         }
     };
-    std::unordered_map<Operations, MathAudioSource::State *> states;
     void valueChanged() override
     {
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::number_out]))
-        {
-            Value source = state->operation(val1, val2);
-            input->node->trigger(source, input);
-        }
-    };
+    }
 
 private:
     juce::ComboBox *c;
-    MathAudioSource::State *state;
-
+    std::unique_ptr<MathAudioSource::State> state;
+    int selected_state;
     float val1 = 0;
     float val2 = 0;
     float res;
-
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (pin != nullptr)
@@ -510,7 +437,7 @@ private:
                 if (pin == inputs[InputKeys::number_1])
                 {
                     val1 = f;
-                    ((NumberInput *)input_components[InputKeys::number_1])->update();
+                    input_components[InputKeys::number_1]->update();
                 }
                 else if (pin == inputs[InputKeys::number_2])
                 {
@@ -523,6 +450,92 @@ private:
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::number_out]))
         {
             Value source = state->operation(val1, val2);
+            input->node->trigger(source, input);
+        }
+    }
+};
+
+class FunctionMathNode : public EditorNode, juce::ComboBox::Listener
+{
+public:
+    enum InputKeys
+    {
+        f,
+        g
+    };
+    enum OutputKeys
+    {
+        h
+    };
+    FunctionMathNode()
+    {
+        val1 = nullptr;
+        val2 = nullptr;
+        header = NodeNames::FunctionMathNode;
+        type_id = (int)NodeTypes::FunctionMath;
+        registerInput(InputKeys::f, "f", PinType::Function);
+        registerInput(InputKeys::g, "g", PinType::Function);
+        registerOutput(OutputKeys::h, "h", PinType::Function);
+        registerInternal(new Selector(new IntRef(selected_state), this, std::vector<std::string>({"Add", "Substract", "Multiply", "Divide"}), 1));
+    };
+    ~FunctionMathNode()
+    {
+    }
+    enum Operations
+    {
+        add = 1,
+        substract,
+        multiply,
+        divide
+    };
+
+    void comboBoxChanged(juce::ComboBox *c) override
+    {
+        switch (selected_state)
+        {
+        case Operations::add:
+            result.reset(new Add(std::vector<F **>({&val1, &val2})));
+            break;
+        case Operations::substract:
+            result.reset(new Substract(std::vector<F **>({&val1, &val2})));
+            break;
+        case Operations::multiply:
+            result.reset(new Multiply(std::vector<F **>({&val1, &val2})));
+            break;
+        case Operations::divide:
+            result.reset(new Divide(std::vector<F **>({&val1, &val2})));
+            break;
+        }
+    };
+
+private:
+    std::unordered_map<Operations, F *> states;
+    int selected_state;
+    std::unique_ptr<F> result;
+    F *val1;
+    F *val2;
+    float res;
+
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
+    {
+        if (pin != nullptr)
+        {
+            if (F *f = std::any_cast<F *>(data))
+            {
+                if (pin == inputs[InputKeys::f])
+                {
+                    val1 = f;
+                }
+                else if (pin == inputs[InputKeys::g])
+                {
+                    val2 = f;
+                }
+            }
+        }
+
+        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::h]))
+        {
+            Value source = result.get();
             input->node->trigger(source, input);
         }
     }
@@ -551,15 +564,9 @@ public:
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
     };
 
-    juce::Component *getInternal() override
-    {
-        return nullptr;
-    }
-
 private:
     StartableSource *s1;
     StartableSource *s2;
-
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (StartableSource *f = std::any_cast<StartableSource *>(data))
@@ -586,119 +593,6 @@ private:
     }
 };
 
-class FunctionMathNode : public EditorNode, NumberInput::Listener
-{
-public:
-    enum InputKeys
-    {
-        f,
-        g
-    };
-    enum OutputKeys
-    {
-        h
-    };
-    FunctionMathNode()
-    {
-        val1 = nullptr;
-        val2 = nullptr;
-        states[Operations::add] = new Add(std::vector<F **>({&val1, &val2}));
-        states[Operations::divide] = new Divide(std::vector<F **>({&val1, &val2}));
-        states[Operations::substract] = new Substract(std::vector<F **>({&val1, &val2}));
-        states[Operations::multiply] = new Multiply(std::vector<F **>({&val1, &val2}));
-        c = nullptr;
-        header = NodeNames::FunctionMathNode;
-        type_id = (int)NodeTypes::FunctionMath;
-        registerInput(InputKeys::f, "f", PinType::Function);
-        registerInput(InputKeys::g, "g", PinType::Function);
-        registerOutput(OutputKeys::h, "h", PinType::Function);
-    };
-    ~FunctionMathNode()
-    {
-    }
-    enum Operations
-    {
-        add = 1,
-        substract,
-        multiply,
-        divide
-    };
-    juce::Component *getInternal() override
-    {
-        c = new juce::ComboBox();
-        c->setSize(1000, 20);
-        c->addItem("Add", Operations::add);
-        c->addItem("Subtract", Operations::substract);
-        c->addItem("Multiply", Operations::multiply);
-        c->addItem("Divide", Operations::divide);
-        c->setSelectedId(Operations::add);
-        c->onChange = [this]
-        { operationChanged(); };
-        return c;
-    }
-    void operationChanged()
-    {
-        //  state = &states[(Operations)c->getSelectedId()];
-        switch (c->getSelectedId())
-        {
-        case Operations::add:
-            result = states[Operations::add];
-            break;
-        case Operations::substract:
-            result = states[Operations::substract];
-            break;
-        case Operations::multiply:
-            result = states[Operations::multiply];
-            break;
-        case Operations::divide:
-            result = states[Operations::divide];
-            break;
-        }
-    };
-
-    void valueChanged() override
-    {
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::h]))
-        {
-            Value source = result;
-            input->node->trigger(source, input);
-        }
-    };
-
-private:
-    std::unordered_map<Operations, F *> states;
-    juce::ComboBox *c;
-    F *result;
-
-    F *val1;
-    F *val2;
-    float res;
-
-    void trigger(Value &data, [[maybe_unused]] Input *pin) override
-    {
-        if (pin != nullptr)
-        {
-            if (F *f = std::any_cast<F *>(data))
-            {
-                if (pin == inputs[InputKeys::f])
-                {
-                    val1 = f;
-                }
-                else if (pin == inputs[InputKeys::g])
-                {
-                    val2 = f;
-                }
-            }
-        }
-
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::h]))
-        {
-            Value source = result;
-            input->node->trigger(source, input);
-        }
-    }
-};
-
 class ConstFunctionNode : public EditorNode, NumberInput::Listener
 {
 public:
@@ -719,10 +613,6 @@ public:
         registerOutput(OutputKeys::func, "number", PinType::Function);
         registerInput(InputKeys::number, "", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(t)));
     };
-    juce::Component *getInternal() override
-    {
-        return nullptr;
-    }
 
 private:
     float t;
@@ -769,11 +659,6 @@ public:
         registerInput(InputKeys::phase_, "phase", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(phase)));
         registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(t)));
     };
-
-    juce::Component *getInternal() override
-    {
-        return nullptr;
-    }
 
 private:
     float frequency = 440;

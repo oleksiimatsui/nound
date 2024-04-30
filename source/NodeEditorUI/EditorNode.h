@@ -27,11 +27,6 @@ public:
         input_components.clear();
     }
 
-    virtual juce::Component *getInternal()
-    {
-        return nullptr;
-    };
-
     void registerInput(int key, const std::string &name, int type, SettableComponent *c)
     {
         Node::registerInput(key, name, type);
@@ -43,6 +38,12 @@ public:
     {
         Node::registerInput(key, name, type);
     }
+
+    void registerInternal(SettableComponent *c)
+    {
+        internal_components.push_back(c);
+    }
+
     juce::Colour getPinColor(int type)
     {
         auto theme = ThemeProvider::getCurrentTheme();
@@ -66,9 +67,16 @@ public:
     {
         return input_components[key];
     }
+    juce::Component *getInternal()
+    {
+        if (internal_components.size() == 0)
+            return nullptr;
+        return internal_components[0];
+    };
 
     int x, y;
     int type_id;
     std::map<int, SettableComponent *> input_components;
-    // std::map<int, ValueRef *> input_values;
+    std::vector<SettableComponent *> internal_components;
+    // std::unique_ptr<Vertical> internal_component;
 };

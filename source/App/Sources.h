@@ -397,7 +397,7 @@ public:
 
             auto buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
             for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
-                buffer[sample] = stateholder->getState()->operation(buffer1[sample], buffer2[sample]);
+                buffer[sample] = state->get()->operation(buffer1[sample], buffer2[sample]);
         }
     }
     void Start() override
@@ -424,7 +424,7 @@ public:
     StartableSource *s2;
     juce::AudioBuffer<float> temp1;
     juce::AudioBuffer<float> temp2;
-    ValueHolder2<State> *stateholder;
+    std::unique_ptr<State> *state;
 };
 
 class ConcatenationSource : public StartableSource

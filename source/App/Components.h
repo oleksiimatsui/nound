@@ -4,15 +4,52 @@
 #include "SettableComponent.h"
 #include "ValueRef.h"
 
+class Selector : public SettableComponent, public juce::ComboBox::Listener
+{
+public:
+    Selector(IntRef *vr, juce::ComboBox::Listener *l, std::vector<std::string> vs, int first_element_index = 0) : SettableComponent(vr)
+    {
+        listener = l;
+        c = new juce::ComboBox();
+        for (int i = 0; i < vs.size(); i++)
+        {
+            c->addItem(vs[i], i + first_element_index);
+        }
+        c->setSelectedId(first_element_index);
+        c->addListener(this);
+        setComponent(c);
+        setSize(1000, 20);
+        addAndMakeVisible(c);
+    }
+    void comboBoxChanged(juce::ComboBox *c) override
+    {
+        int v = c->getSelectedId();
+        ((IntRef *)(value_ref))->value = v;
+        update();
+        listener->comboBoxChanged(c);
+    }
+    void update() override
+    {
+        c->setSelectedId((int)(((IntRef *)(value_ref))->value));
+    }
+
+private:
+    juce::ComboBox *c;
+    juce::ComboBox::Listener *listener;
+};
+
 class FileInput : public SettableComponent
 {
 public:
     class Listener
     {
     public:
-        virtual void setFile() = 0;
+        virtual void fileChanged()
+        {
+        }
     };
-    FileInput(Listener *l, StringRef *vr) : SettableComponent(vr)
+
+    FileInput(StringRef *vr, FileInput::Listener *l) : SettableComponent(vr)
     {
         listener = l;
         button.onClick = [this]()
@@ -25,11 +62,8 @@ public:
         addAndMakeVisible(button);
         label.setSize(0, ThemeProvider::getCurrentTheme()->nodeTextHeight);
         button.setSize(0, ThemeProvider::getCurrentTheme()->nodeTextHeight + 4);
-
         addAndMakeVisible(label);
-
         setSize(0, 0);
-
         alignElements();
         int h = label.getBottom();
         setSize(getWidth(), h);
@@ -79,8 +113,13 @@ public:
     }
     void setFile(juce::String name)
     {
-        fromString(name.toStdString());
-        listener->setFile();
+        StringRef *strref = (StringRef *)value_ref;
+        strref->value = name.toStdString();
+        label.setText(name, juce::NotificationType::dontSendNotification);
+    }
+    void update() override
+    {
+        label.setText(toString(), juce::NotificationType::dontSendNotification);
     }
 
 private:
