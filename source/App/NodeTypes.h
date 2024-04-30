@@ -210,7 +210,7 @@ private:
     }
 };
 
-class WaveformNode : public EditorNode
+class WaveformNode : public EditorNode, juce::ComboBox::Listener
 {
 public:
     enum InputKeys
@@ -228,49 +228,41 @@ public:
         sawtooth,
         triangle
     };
-    void operationChanged()
+    void comboBoxChanged(juce::ComboBox *c) override
     {
-        F *new_wave;
         switch (c->getSelectedId())
         {
         case Operations::sine:
-            new_wave = new Sine(std::vector<F **>({&func}));
+            waveform.reset(new Sine(std::vector<F **>({&func})));
             break;
         case Operations::square:
-            new_wave = new Square(std::vector<F **>({&func}));
+            waveform.reset(new Square(std::vector<F **>({&func})));
             break;
         case Operations::sawtooth:
-            new_wave = new Sawtooth(std::vector<F **>({&func}));
+            waveform.reset(new Sawtooth(std::vector<F **>({&func})));
             break;
         case Operations::triangle:
-            new_wave = new Triangle(std::vector<F **>({&func}));
+            waveform.reset(new Triangle(std::vector<F **>({&func})));
             break;
         }
-        waveform = new_wave;
     };
     WaveformNode()
     {
         func = nullptr;
         header = NodeNames::WaveformNode;
         type_id = (int)NodeTypes::Waveform;
-        waveform = new Sine(std::vector<F **>({&func}));
+        waveform.reset(new Sine(std::vector<F **>({&func})));
+        selected_wave = 1;
         registerInput(InputKeys::function, "", PinType::Function);
         registerOutput(OutputKeys::wave_out, "wave", PinType::Function);
-        c = new juce::ComboBox();
-        c->setSize(1000, 20);
-        c->addItem("Sine", Operations::sine);
-        c->addItem("Square", Operations::square);
-        c->addItem("Sawtooth", Operations::sawtooth);
-        c->addItem("Triangle", Operations::triangle);
-        c->setSelectedId(Operations::sine);
-        c->onChange = [this]
-        { operationChanged(); };
+        registerInternal(new Selector(new IntRef(selected_wave), this, std::vector<std::string>({"Sine", "Square", "Sawtooth", "Triangle"}), 1));
     };
-    F *waveform;
+    std::unique_ptr<F> waveform;
 
 private:
-    juce::ComboBox *c;
+    int selected_wave;
     F *func;
+
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (pin == inputs[InputKeys::function])
@@ -280,7 +272,7 @@ private:
         }
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::wave_out]))
         {
-            Value source = waveform;
+            Value source = waveform.get();
             input->node->trigger(source, input);
         }
     }
