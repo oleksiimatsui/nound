@@ -13,7 +13,8 @@ enum class NodeTypes
     FunctionMath,
     Const,
     Random,
-    Oscillator
+    Oscillator,
+    NumberNode
 };
 
 struct NodeNames
@@ -29,6 +30,7 @@ struct NodeNames
     static const std::string Concatenate;
     static const std::string FunctionMathNode;
     static const std::string ConstNode;
+    static const std::string NumberNode;
 };
 const std::string NodeNames::OutputNode = "Output";
 const std::string NodeNames::FileReader = "File Reader";
@@ -41,3 +43,4 @@ const std::string NodeNames::Concatenate = "Concatenate";
 const std::string NodeNames::FunctionMathNode = "Arithmetic";
 const std::string NodeNames::ConstNode = "Const";
 const std::string NodeNames::Oscillator = "Oscillator";
+const std::string NodeNames::NumberNode = "Number";

@@ -18,7 +18,7 @@ protected:
         {
             return x;
         }
-        if (*fs[index] == nullptr)
+        if (fs[index] == nullptr || *fs[index] == nullptr)
             return x;
         return (*(fs[index]))->get(x);
     }
@@ -41,6 +41,22 @@ public:
 
 private:
     float &a;
+};
+
+class Random : public F
+{
+public:
+    Random() : F(std::vector<F **>({}))
+    {
+        random.setSeed(123);
+    };
+    double get(double x)
+    {
+        return random.nextDouble();
+    }
+
+private:
+    juce::Random random;
 };
 
 class Sine : public F

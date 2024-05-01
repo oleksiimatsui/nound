@@ -192,61 +192,6 @@ public:
     //  juce::TimeSliceThread thread{"audio file preview"};
 };
 
-class RandomSource : public StartableSource
-{
-public:
-    RandomSource(double _t)
-    {
-        t = _t;
-        samples_count = 0;
-        n = 0;
-    }
-
-    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
-    {
-        samples_count = t * sampleRate;
-        random.setSeed(0);
-    }
-    void releaseResources() override
-    {
-    }
-    void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
-    {
-        // Fill the required number of samples with noise between -0.125 and +0.125
-        for (auto sample = 0; sample < bufferToFill.numSamples; ++sample)
-        {
-            for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
-            {
-                auto *buffer = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
-
-                buffer[sample] = random.nextFloat() * 0.25f - 0.125f;
-            }
-            n++;
-        }
-        if (n >= samples_count)
-        {
-            bufferToFill.clearActiveBufferRegion();
-            return;
-        }
-    }
-    void Start() override
-    {
-    }
-    void Stop() override
-    {
-    }
-    bool isPlaying() override
-    {
-        return n < samples_count;
-    }
-
-private:
-    juce::Random random;
-    double t; // time to play in seconds
-    int n;
-    int samples_count;
-};
-
 class Osc : public StartableSource
 {
 public:

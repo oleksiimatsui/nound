@@ -60,15 +60,17 @@ public:
         i.push_back(new Item("Numbers", std::vector<Item *>(
                                             {
                                                 new ItemWithNode(NodeNames::NumberMathNode, std::vector<Item *>(), new NodeCreateCommand<NumberMathNode>, g),
+                                                new ItemWithNode(NodeNames::NumberNode, std::vector<Item *>(), new NodeCreateCommand<NumberNode>, g),
+
                                             })));
 
         i.push_back(new Item("Functions", std::vector<Item *>(
                                               {new ItemWithNode(NodeNames::WaveformNode, std::vector<Item *>(), new NodeCreateCommand<WaveformNode>, g),
                                                new ItemWithNode(NodeNames::FunctionMathNode, std::vector<Item *>(), new NodeCreateCommand<FunctionMathNode>, g),
-                                               new ItemWithNode(NodeNames::ConstNode, std::vector<Item *>(), new NodeCreateCommand<ConstFunctionNode>, g)})));
+                                               new ItemWithNode(NodeNames::ConstNode, std::vector<Item *>(), new NodeCreateCommand<ConstFunctionNode>, g),
+                                               new ItemWithNode(NodeNames::RandomNode, std::vector<Item *>(), new NodeCreateCommand<RandomNode>, g)})));
         i.push_back(new Item("Audio", std::vector<Item *>(
                                           {new ItemWithNode(NodeNames::FileReader, std::vector<Item *>(), new NodeCreateCommand<FileReaderNode>, g),
-                                           new ItemWithNode(NodeNames::RandomNode, std::vector<Item *>(), new NodeCreateCommand<RandomNode>, g),
                                            new ItemWithNode(NodeNames::Oscillator, std::vector<Item *>(), new NodeCreateCommand<OscillatorNode>, g),
                                            new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeCreateCommand<ReverbNode>, g),
                                            new ItemWithNode(NodeNames::AudioMathNode, std::vector<Item *>(), new NodeCreateCommand<AudioMathNode>, g),
