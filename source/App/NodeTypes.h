@@ -9,17 +9,17 @@
 
 #include "NodeTypesRegistry.h"
 
-class AbstractNodeFactory
+class AbstractNodeCreateCommand
 {
 public:
-    virtual EditorNode *create() = 0;
+    virtual EditorNode *execute() = 0;
 };
 
 template <class T>
-class NodeFactory : public AbstractNodeFactory
+class NodeCreateCommand : public AbstractNodeCreateCommand
 {
 public:
-    EditorNode *create() override
+    EditorNode *execute() override
     {
         return new T;
     }

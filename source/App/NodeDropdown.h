@@ -29,21 +29,21 @@ struct Item
 
 struct ItemWithNode : public Item
 {
-    ItemWithNode(const std::string &_name, const std::vector<Item *> &_childs, AbstractNodeFactory *_factory, Graph *g) : Item(_name, _childs)
+    ItemWithNode(const std::string &_name, const std::vector<Item *> &_childs, AbstractNodeCreateCommand *_factory, Graph *g) : Item(_name, _childs)
     {
         factory = _factory;
         graph = g;
     };
     void onClick() override
     {
-        graph->addNode(factory->create());
+        graph->addNode(factory->execute());
     }
     ~ItemWithNode() override
     {
         delete factory;
         factory = nullptr;
     }
-    AbstractNodeFactory *factory;
+    AbstractNodeCreateCommand *factory;
     Graph *graph;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ItemWithNode);
 };
@@ -59,21 +59,21 @@ public:
 
         i.push_back(new Item("Numbers", std::vector<Item *>(
                                             {
-                                                new ItemWithNode(NodeNames::NumberMathNode, std::vector<Item *>(), new NodeFactory<NumberMathNode>, g),
+                                                new ItemWithNode(NodeNames::NumberMathNode, std::vector<Item *>(), new NodeCreateCommand<NumberMathNode>, g),
                                             })));
 
         i.push_back(new Item("Functions", std::vector<Item *>(
-                                              {new ItemWithNode(NodeNames::WaveformNode, std::vector<Item *>(), new NodeFactory<WaveformNode>, g),
-                                               new ItemWithNode(NodeNames::FunctionMathNode, std::vector<Item *>(), new NodeFactory<FunctionMathNode>, g),
-                                               new ItemWithNode(NodeNames::ConstNode, std::vector<Item *>(), new NodeFactory<ConstFunctionNode>, g)})));
+                                              {new ItemWithNode(NodeNames::WaveformNode, std::vector<Item *>(), new NodeCreateCommand<WaveformNode>, g),
+                                               new ItemWithNode(NodeNames::FunctionMathNode, std::vector<Item *>(), new NodeCreateCommand<FunctionMathNode>, g),
+                                               new ItemWithNode(NodeNames::ConstNode, std::vector<Item *>(), new NodeCreateCommand<ConstFunctionNode>, g)})));
         i.push_back(new Item("Audio", std::vector<Item *>(
-                                          {new ItemWithNode(NodeNames::FileReader, std::vector<Item *>(), new NodeFactory<FileReaderNode>, g),
-                                           new ItemWithNode(NodeNames::RandomNode, std::vector<Item *>(), new NodeFactory<RandomNode>, g),
-                                           new ItemWithNode(NodeNames::Oscillator, std::vector<Item *>(), new NodeFactory<OscillatorNode>, g),
-                                           new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeFactory<ReverbNode>, g),
-                                           new ItemWithNode(NodeNames::AudioMathNode, std::vector<Item *>(), new NodeFactory<AudioMathNode>, g),
-                                           new ItemWithNode(NodeNames::Concatenate, std::vector<Item *>(), new NodeFactory<ConcatenateNode>, g),
-                                           new ItemWithNode(NodeNames::OutputNode, std::vector<Item *>(), new NodeFactory<OutputNode>, g)})));
+                                          {new ItemWithNode(NodeNames::FileReader, std::vector<Item *>(), new NodeCreateCommand<FileReaderNode>, g),
+                                           new ItemWithNode(NodeNames::RandomNode, std::vector<Item *>(), new NodeCreateCommand<RandomNode>, g),
+                                           new ItemWithNode(NodeNames::Oscillator, std::vector<Item *>(), new NodeCreateCommand<OscillatorNode>, g),
+                                           new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeCreateCommand<ReverbNode>, g),
+                                           new ItemWithNode(NodeNames::AudioMathNode, std::vector<Item *>(), new NodeCreateCommand<AudioMathNode>, g),
+                                           new ItemWithNode(NodeNames::Concatenate, std::vector<Item *>(), new NodeCreateCommand<ConcatenateNode>, g),
+                                           new ItemWithNode(NodeNames::OutputNode, std::vector<Item *>(), new NodeCreateCommand<OutputNode>, g)})));
 
         return i;
     }

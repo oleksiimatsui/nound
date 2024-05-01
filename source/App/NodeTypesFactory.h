@@ -8,24 +8,24 @@ class NoundTypesFactory : public TypesRecoverFactory
 public:
     NoundTypesFactory()
     {
-        factories[NodeTypes::Output] = new NodeFactory<OutputNode>;
-        factories[NodeTypes::Reverb] = new NodeFactory<ReverbNode>;
-        factories[NodeTypes::Waveform] = new NodeFactory<WaveformNode>;
-        factories[NodeTypes::FileReader] = new NodeFactory<FileReaderNode>;
-        factories[NodeTypes::AudioMath] = new NodeFactory<AudioMathNode>;
-        factories[NodeTypes::NumberMath] = new NodeFactory<NumberMathNode>;
-        factories[NodeTypes::Concatenate] = new NodeFactory<ConcatenateNode>;
-        factories[NodeTypes::FunctionMath] = new NodeFactory<FunctionMathNode>;
-        factories[NodeTypes::Const] = new NodeFactory<ConstFunctionNode>;
-        factories[NodeTypes::Random] = new NodeFactory<RandomNode>;
-        factories[NodeTypes::Oscillator] = new NodeFactory<OscillatorNode>;
+        factories[NodeTypes::Output] = new NodeCreateCommand<OutputNode>;
+        factories[NodeTypes::Reverb] = new NodeCreateCommand<ReverbNode>;
+        factories[NodeTypes::Waveform] = new NodeCreateCommand<WaveformNode>;
+        factories[NodeTypes::FileReader] = new NodeCreateCommand<FileReaderNode>;
+        factories[NodeTypes::AudioMath] = new NodeCreateCommand<AudioMathNode>;
+        factories[NodeTypes::NumberMath] = new NodeCreateCommand<NumberMathNode>;
+        factories[NodeTypes::Concatenate] = new NodeCreateCommand<ConcatenateNode>;
+        factories[NodeTypes::FunctionMath] = new NodeCreateCommand<FunctionMathNode>;
+        factories[NodeTypes::Const] = new NodeCreateCommand<ConstFunctionNode>;
+        factories[NodeTypes::Random] = new NodeCreateCommand<RandomNode>;
+        factories[NodeTypes::Oscillator] = new NodeCreateCommand<OscillatorNode>;
     }
 
     EditorNode *getNode(int type_id) override
     {
-        return factories[(NodeTypes)type_id]->create();
+        return factories[(NodeTypes)type_id]->execute();
     }
-    std::map<NodeTypes, AbstractNodeFactory *> factories;
+    std::map<NodeTypes, AbstractNodeCreateCommand *> factories;
 
     ~NoundTypesFactory()
     {
