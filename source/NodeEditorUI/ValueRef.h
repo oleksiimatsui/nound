@@ -1,14 +1,14 @@
 #pragma once
 #include "string"
 #include "iostream"
-class ValueRefParser
+class ValueRef
 {
 public:
     virtual std::string toString() = 0;
     virtual void fromString(const std::string &str) = 0;
 };
 
-class StringRef : public ValueRefParser
+class StringRef : public ValueRef
 {
 public:
     std::string &value;
@@ -30,7 +30,7 @@ public:
         value = str;
     }
 };
-class IntRef : public ValueRefParser
+class IntRef : public ValueRef
 {
 public:
     int &value;
@@ -44,7 +44,7 @@ public:
         value = std::stoi(str);
     }
 };
-class FloatRef : public ValueRefParser
+class FloatRef : public ValueRef
 {
 public:
     float &value;

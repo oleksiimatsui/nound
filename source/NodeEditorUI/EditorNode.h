@@ -27,7 +27,7 @@ public:
         input_components.clear();
     }
 
-    void registerInput(int key, const std::string &name, int type, SettableComponent *c)
+    void registerInput(int key, const std::string &name, int type, ValueRefComponent *c)
     {
         Node::registerInput(key, name, type);
         if (c != nullptr)
@@ -39,7 +39,7 @@ public:
         Node::registerInput(key, name, type);
     }
 
-    void registerInternal(SettableComponent *c)
+    void registerInternal(ValueRefComponent *c)
     {
         internal_components.push_back(c);
     }
@@ -76,7 +76,7 @@ public:
 
     int x, y;
     int type_id;
-    std::map<int, SettableComponent *> input_components;
-    std::vector<SettableComponent *> internal_components;
+    std::map<int, ValueRefComponent *> input_components;
+    std::vector<ValueRefComponent *> internal_components;
     // std::unique_ptr<Vertical> internal_component;
 };

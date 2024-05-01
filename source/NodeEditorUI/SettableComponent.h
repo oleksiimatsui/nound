@@ -3,12 +3,12 @@
 #include <JuceHeader.h>
 #include "ValueRef.h"
 
-class SettableComponent : public juce::Component, public ValueRefParser
+class ValueRefComponent : public juce::Component, public ValueRef
 {
 public:
-    SettableComponent(ValueRefParser *vr) : value_ref(vr){};
+    ValueRefComponent(ValueRef *vr) : value_ref(vr){};
 
-    ~SettableComponent() override
+    ~ValueRefComponent() override
     {
     }
 
@@ -34,6 +34,6 @@ public:
     }
 
 protected:
-    ValueRefParser *value_ref;
+    ValueRef *value_ref;
     Component *component;
 };

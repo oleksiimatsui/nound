@@ -4,10 +4,10 @@
 #include "SettableComponent.h"
 #include "ValueRef.h"
 
-class Selector : public SettableComponent, public juce::ComboBox::Listener
+class Selector : public ValueRefComponent, public juce::ComboBox::Listener
 {
 public:
-    Selector(IntRef *vr, juce::ComboBox::Listener *l, std::vector<std::string> vs, int first_element_index = 0) : SettableComponent(vr)
+    Selector(IntRef *vr, juce::ComboBox::Listener *l, std::vector<std::string> vs, int first_element_index = 0) : ValueRefComponent(vr)
     {
         listener = l;
         c = new juce::ComboBox();
@@ -38,7 +38,7 @@ private:
     juce::ComboBox::Listener *listener;
 };
 
-class FileInput : public SettableComponent
+class FileInput : public ValueRefComponent
 {
 public:
     class Listener
@@ -49,7 +49,7 @@ public:
         }
     };
 
-    FileInput(StringRef *vr, FileInput::Listener *l) : SettableComponent(vr)
+    FileInput(StringRef *vr, FileInput::Listener *l) : ValueRefComponent(vr)
     {
         listener = l;
         button.onClick = [this]()
@@ -130,7 +130,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FileInput);
 };
 
-class NumberInput : public SettableComponent, public juce::Slider::Listener
+class NumberInput : public ValueRefComponent, public juce::Slider::Listener
 {
 public:
     class Listener
@@ -145,7 +145,7 @@ public:
         *value = slider->getValue();
         listener->valueChanged();
     }
-    NumberInput(NumberInput::Listener *_node, float min, float max, FloatRef *val) : SettableComponent(val)
+    NumberInput(NumberInput::Listener *_node, float min, float max, FloatRef *val) : ValueRefComponent(val)
     {
         listener = _node;
         value = &(val->value);
