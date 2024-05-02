@@ -20,6 +20,7 @@ public:
         factories[NodeTypes::Random] = new NodeCreateCommand<RandomNode>;
         factories[NodeTypes::Oscillator] = new NodeCreateCommand<OscillatorNode>;
         factories[NodeTypes::LineNode] = new NodeCreateCommand<LineNode>;
+        factories[NodeTypes::ConcatenateFunction] = new NodeCreateCommand<ConcatenateFNode>;
     }
 
     EditorNode *getNode(int type_id) override

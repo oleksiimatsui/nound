@@ -18,7 +18,7 @@ protected:
         {
             return x;
         }
-        if (fs[index] == nullptr || *fs[index] == nullptr)
+        if (fs[index] == nullptr || *(fs[index]) == nullptr)
             return x;
         return (*(fs[index]))->get(x);
     }
@@ -179,4 +179,25 @@ public:
     {
         return use_f(0, x) / use_f(1, x);
     }
+};
+
+class Concatenate : public F
+{
+public:
+    Concatenate(std::vector<F **> _f) : F(_f){};
+
+    double get(double rad) override
+    {
+        double x = std::fmod(rad, 4.0f * juce::MathConstants<double>::pi);
+        if (x < juce::MathConstants<double>::twoPi)
+        {
+            return use_f(0, x);
+        }
+        else
+        {
+            return use_f(1, x);
+        }
+    }
+
+private:
 };

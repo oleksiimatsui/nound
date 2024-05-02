@@ -660,6 +660,62 @@ private:
     }
 };
 
+class ConcatenateFNode : public EditorNode
+{
+public:
+    enum InputKeys
+    {
+        f,
+        g
+    };
+    enum OutputKeys
+    {
+        h
+    };
+    ConcatenateFNode()
+    {
+        val1 = nullptr;
+        val2 = nullptr;
+        header = NodeNames::ConcatenateFunction;
+        type_id = (int)NodeTypes::ConcatenateFunction;
+        registerInput(InputKeys::f, "f", PinType::Function);
+        registerInput(InputKeys::g, "g", PinType::Function);
+        registerOutput(OutputKeys::h, "h", PinType::Function);
+        result.reset(new Concatenate(std::vector<F **>({&val1, &val2})));
+    };
+
+private:
+    std::unique_ptr<F> result;
+    F *val1;
+    F *val2;
+
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
+    {
+        if (pin != nullptr)
+        {
+            if (F *f = std::any_cast<F *>(data))
+            {
+                if (pin == inputs[InputKeys::f])
+                {
+                    val1 = f;
+                }
+                else if (pin == inputs[InputKeys::g])
+                {
+                    val2 = f;
+                }
+            }
+        }
+
+        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::h]))
+        {
+            if (result.get() == nullptr)
+                return;
+            Value source = result.get();
+            input->node->trigger(source, input);
+        }
+    }
+};
+
 // number
 
 class NumberMathNode : public EditorNode,

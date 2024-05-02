@@ -69,7 +69,8 @@ public:
                                                new ItemWithNode(NodeNames::WaveformNode, std::vector<Item *>(), new NodeCreateCommand<WaveformNode>, g),
                                                new ItemWithNode(NodeNames::FunctionMathNode, std::vector<Item *>(), new NodeCreateCommand<FunctionMathNode>, g),
                                                new ItemWithNode(NodeNames::ConstNode, std::vector<Item *>(), new NodeCreateCommand<ConstFunctionNode>, g),
-                                               new ItemWithNode(NodeNames::RandomNode, std::vector<Item *>(), new NodeCreateCommand<RandomNode>, g)})));
+                                               new ItemWithNode(NodeNames::RandomNode, std::vector<Item *>(), new NodeCreateCommand<RandomNode>, g),
+                                               new ItemWithNode(NodeNames::ConcatenateFunction, std::vector<Item *>(), new NodeCreateCommand<ConcatenateFNode>, g)})));
         i.push_back(new Item("Audio", std::vector<Item *>(
                                           {new ItemWithNode(NodeNames::FileReader, std::vector<Item *>(), new NodeCreateCommand<FileReaderNode>, g),
                                            new ItemWithNode(NodeNames::Oscillator, std::vector<Item *>(), new NodeCreateCommand<OscillatorNode>, g),
