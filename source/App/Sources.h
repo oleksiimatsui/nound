@@ -15,7 +15,13 @@ public:
     StartableSource(){};
     virtual void Start() = 0;
     virtual void Stop() = 0;
-    virtual bool isPlaying() = 0;
+    virtual int getLength() = 0;
+    virtual int getCurrentPosition() = 0;
+    //   virtual void setCurrentPosition(int position) = 0;
+    virtual bool isPlaying()
+    {
+        return getCurrentPosition() < getLength();
+    }
 
 private:
 };
@@ -122,9 +128,13 @@ public:
     {
         source->Stop();
     };
-    bool isPlaying() override
+    int getCurrentPosition() override
     {
-        return source->isPlaying();
+        return source->getCurrentPosition();
+    }
+    int getLength() override
+    {
+        return source->getLength();
     }
     StartableSource *source;
     juce::ReverbAudioSource *r;
@@ -181,11 +191,15 @@ public:
     {
         transportSource.stop();
     }
-    bool isPlaying()
-    {
-        return transportSource.isPlaying();
-    }
 
+    int getCurrentPosition() override
+    {
+        return transportSource.getCurrentPosition();
+    }
+    int getLength() override
+    {
+        return transportSource.getTotalLength();
+    }
     std::string path;
     juce::AudioTransportSource transportSource;
     juce::File file;
@@ -235,10 +249,16 @@ public:
     void Stop() override
     {
     }
-    bool isPlaying() override
+    int getCurrentPosition() override
     {
-        return n <= samples_count;
+        return n;
     }
+    int getLength() override
+    {
+        return samples_count;
+    }
+
+private:
     float &frequency;
     float &phase;
     double period;
@@ -353,9 +373,13 @@ public:
         s2->Stop();
     }
 
-    bool isPlaying() override
+    int getCurrentPosition() override
     {
-        return s1->isPlaying() && s2->isPlaying();
+        return s1->getCurrentPosition();
+    }
+    int getLength() override
+    {
+        return std::min(s1->getLength(), s2->getLength());
     }
 
     StartableSource *s1;
@@ -370,16 +394,19 @@ class ConcatenationSource : public StartableSource
 public:
     ConcatenationSource()
     {
-        is_playing = false;
         currentTrack = 0;
         numOfTracks = 0;
+        n = 0;
     }
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
     {
         numOfTracks = sources.size();
+        length = 0;
+
         for (auto &s : sources)
         {
             s->prepareToPlay(samplesPerBlockExpected, sampleRate);
+            length += s->getLength();
         }
     }
     void releaseResources() override
@@ -392,26 +419,54 @@ public:
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
         auto s = sources[currentTrack];
-        if (s->isPlaying())
+        int length = s->getLength();
+        int position = s->getCurrentPosition();
+        if (position < length)
         {
-            s->getNextAudioBlock(bufferToFill);
-        }
-        else if (currentTrack < numOfTracks - 1)
-        {
-            currentTrack++;
+            juce::AudioSourceChannelInfo info(bufferToFill);
+            info.startSample = 0;
+            info.numSamples = juce::jmin(bufferToFill.numSamples, s->getLength() - s->getCurrentPosition());
+            s->getNextAudioBlock(info);
+
+            for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+            {
+                auto buffer = info.buffer->getReadPointer(channel, bufferToFill.startSample);
+                auto output = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
+                for (auto sample = 0; sample < info.numSamples; ++sample)
+                    output[sample] = buffer[sample];
+            }
+            if (info.numSamples < bufferToFill.numSamples)
+            {
+                juce::AudioSourceChannelInfo next_audio_info(bufferToFill);
+                info.startSample = 0;
+                info.numSamples = bufferToFill.numSamples - info.numSamples;
+                s->getNextAudioBlock(info);
+                for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+                {
+                    auto buffer = info.buffer->getReadPointer(channel, bufferToFill.startSample);
+                    auto output = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
+                    for (auto sample = info.numSamples; sample < bufferToFill.numSamples; ++sample)
+                        output[sample] = buffer[sample];
+                }
+                currentTrack++;
+            }
+            n += bufferToFill.numSamples;
         }
         else
         {
-            is_playing = false;
-            bufferToFill.clearActiveBufferRegion();
-            return;
+            if (currentTrack >= numOfTracks)
+            {
+                bufferToFill.clearActiveBufferRegion();
+                return;
+            }
+            currentTrack++;
         }
     };
     void Start() override
     {
         if (sources.size() == 0)
             return;
-        is_playing = true;
+        n = 0;
         sources[0]->Start();
     }
     void Stop() override
@@ -421,9 +476,13 @@ public:
             s->Stop();
         }
     }
-    bool isPlaying()
+    int getCurrentPosition() override
     {
-        return is_playing;
+        return n;
+    }
+    int getLength() override
+    {
+        return length;
     }
 
     std::vector<StartableSource *> sources;
@@ -431,5 +490,6 @@ public:
 private:
     int numOfTracks;
     int currentTrack;
-    bool is_playing;
+    int n;
+    int length;
 };

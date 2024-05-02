@@ -42,7 +42,6 @@ public:
 private:
     float &a;
 };
-
 class Random : public F
 {
 public:
@@ -122,6 +121,25 @@ public:
                                           double(-1));
         return res;
     }
+};
+
+class Line : public F
+{
+public:
+    Line(float &_start, float &_end, std::vector<F **> _f) : F(_f), start(_start), end(_end)
+    {
+    }
+
+    double get(double rad)
+    {
+        rad = use_f(0, rad);
+        double x = std::fmod(rad, juce::MathConstants<double>::twoPi);
+        return juce::jmap(x, 0.0, juce::MathConstants<double>::twoPi, (double)start, (double)end);
+    }
+
+private:
+    float &start;
+    float &end;
 };
 
 class Add : public F

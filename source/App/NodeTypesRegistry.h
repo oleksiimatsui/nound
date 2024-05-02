@@ -14,7 +14,8 @@ enum class NodeTypes
     Const,
     Random,
     Oscillator,
-    NumberNode
+    NumberNode,
+    LineNode
 };
 
 struct NodeNames
@@ -31,6 +32,7 @@ struct NodeNames
     static const std::string FunctionMathNode;
     static const std::string ConstNode;
     static const std::string NumberNode;
+    static const std::string LineNode;
 };
 const std::string NodeNames::OutputNode = "Output";
 const std::string NodeNames::FileReader = "File Reader";
@@ -44,3 +46,4 @@ const std::string NodeNames::FunctionMathNode = "Arithmetic";
 const std::string NodeNames::ConstNode = "Const";
 const std::string NodeNames::Oscillator = "Oscillator";
 const std::string NodeNames::NumberNode = "Number";
+const std::string NodeNames::LineNode = "Line";

@@ -309,6 +309,10 @@ private:
         }
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
         {
+            if (wave == nullptr)
+            {
+                wave = new Sine(std::vector<F **>({}));
+            }
             auto fs = new Osc(t, frequency, phase, &wave);
             Value source = (StartableSource *)(fs);
             input->node->trigger(source, input);
@@ -588,7 +592,6 @@ public:
 
 private:
     std::unique_ptr<F> randomF;
-    float t;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::random]))
@@ -599,9 +602,69 @@ private:
     }
 };
 
+class LineNode : public EditorNode, NumberInput::Listener
+{
+public:
+    enum InputKeys
+    {
+        start_,
+        end_,
+        function_in
+    };
+    enum OutputKeys
+    {
+        line_
+    };
+    LineNode()
+    {
+        f = nullptr;
+        start = 0;
+        end = 0;
+        line.reset(new Line(start, end, std::vector<F **>({&f})));
+        header = NodeNames::LineNode;
+        type_id = (int)NodeTypes::LineNode;
+        registerOutput(OutputKeys::line_, "line", PinType::Function);
+        registerInput(InputKeys::start_, "start", PinType::Number, new NumberInput(this, -50000, 50000, new FloatRef(start)));
+        registerInput(InputKeys::end_, "end", PinType::Number, new NumberInput(this, -50000, 50000, new FloatRef(end)));
+        registerInput(InputKeys::function_in, "", PinType::Function);
+    };
+
+private:
+    std::unique_ptr<F> line;
+    float start;
+    float end;
+    F *f;
+
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
+    {
+        delete f;
+        f = nullptr;
+        if (pin == inputs[InputKeys::function_in])
+        {
+            auto f_ = std::any_cast<F *>(data);
+            f = f_;
+        }
+        if (pin == inputs[InputKeys::start_])
+        {
+            start = std::any_cast<float>(data);
+        }
+        if (pin == inputs[InputKeys::start_])
+        {
+            end = std::any_cast<float>(data);
+        }
+        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::line_]))
+        {
+            Value source = line.get();
+            input->node->trigger(source, input);
+        }
+    }
+};
+
 // number
 
-class NumberMathNode : public EditorNode, juce::ComboBox::Listener, NumberInput::Listener
+class NumberMathNode : public EditorNode,
+                       juce::ComboBox::Listener,
+                       NumberInput::Listener
 {
 public:
     enum InputKeys

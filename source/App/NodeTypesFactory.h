@@ -19,6 +19,7 @@ public:
         factories[NodeTypes::Const] = new NodeCreateCommand<ConstFunctionNode>;
         factories[NodeTypes::Random] = new NodeCreateCommand<RandomNode>;
         factories[NodeTypes::Oscillator] = new NodeCreateCommand<OscillatorNode>;
+        factories[NodeTypes::LineNode] = new NodeCreateCommand<LineNode>;
     }
 
     EditorNode *getNode(int type_id) override
