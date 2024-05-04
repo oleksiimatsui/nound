@@ -799,7 +799,7 @@ private:
 
         for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::number_out]))
         {
-            Value source = state->operation(val1, val2);
+            Value source = (float)state->operation(val1, val2);
             input->node->trigger(source, input);
         }
     }
@@ -834,7 +834,7 @@ public:
     }
 
 private:
-    float value;
+    float value = 0;
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
@@ -849,5 +849,6 @@ private:
                 }
             }
         }
+        valueChanged();
     }
 };
