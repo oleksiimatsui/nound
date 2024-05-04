@@ -415,7 +415,7 @@ public:
                                             {},
                                             0));
         output->prepareToPlay(480, 48000);
-        output->Start();
+        output->setPosition();
         while (output->isPlaying())
         {
             juce::AudioBuffer<float> buffer;

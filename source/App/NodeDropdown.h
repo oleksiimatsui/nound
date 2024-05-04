@@ -77,6 +77,7 @@ public:
                                            new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeCreateCommand<ReverbNode>, g),
                                            new ItemWithNode(NodeNames::AudioMathNode, std::vector<Item *>(), new NodeCreateCommand<AudioMathNode>, g),
                                            new ItemWithNode(NodeNames::Concatenate, std::vector<Item *>(), new NodeCreateCommand<ConcatenateNode>, g),
+                                           new ItemWithNode(NodeNames::RepeatNode, std::vector<Item *>(), new NodeCreateCommand<RepeatNode>, g),
                                            new ItemWithNode(NodeNames::OutputNode, std::vector<Item *>(), new NodeCreateCommand<OutputNode>, g)})));
 
         return i;

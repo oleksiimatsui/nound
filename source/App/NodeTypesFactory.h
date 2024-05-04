@@ -21,6 +21,7 @@ public:
         factories[NodeTypes::Oscillator] = new NodeCreateCommand<OscillatorNode>;
         factories[NodeTypes::LineNode] = new NodeCreateCommand<LineNode>;
         factories[NodeTypes::ConcatenateFunction] = new NodeCreateCommand<ConcatenateFNode>;
+        factories[NodeTypes::RepeatNode] = new NodeCreateCommand<RepeatNode>;
     }
 
     EditorNode *getNode(int type_id) override

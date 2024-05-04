@@ -372,6 +372,58 @@ private:
     }
 };
 
+class RepeatNode : public EditorNode, NumberInput::Listener
+{
+public:
+    enum InputKeys
+    {
+        audio_,
+        seconds_,
+    };
+    enum OutputKeys
+    {
+        audio_out
+    };
+    RepeatNode() : EditorNode()
+    {
+        t = 1;
+        audio = nullptr;
+        header = NodeNames::RepeatNode;
+        type_id = (int)NodeTypes::Oscillator;
+        registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
+        registerInput(InputKeys::audio_, "audio", PinType::Audio);
+        registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(t)));
+    };
+
+private:
+    float t = 1;
+    StartableSource *audio;
+
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
+    {
+        if (pin == inputs[InputKeys::seconds_])
+        {
+            t = std::any_cast<float>(data);
+            ((NumberInput *)input_components[InputKeys::seconds_])->update();
+        }
+        if (pin == inputs[InputKeys::audio_])
+        {
+            audio = std::any_cast<StartableSource *>(data);
+        }
+        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
+        {
+            if (audio == nullptr)
+            {
+                return;
+            }
+            auto res = new RepeatSource(t);
+            res->source = audio;
+            Value source = (StartableSource *)(res);
+            input->node->trigger(source, input);
+        }
+    }
+};
+
 // function
 
 class FunctionMathNode : public EditorNode, juce::ComboBox::Listener
