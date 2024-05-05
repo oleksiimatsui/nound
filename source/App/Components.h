@@ -116,6 +116,7 @@ public:
         StringRef *strref = (StringRef *)value_ref;
         strref->value = name.toStdString();
         label.setText(name, juce::NotificationType::dontSendNotification);
+        listener->fileChanged();
     }
     void update() override
     {

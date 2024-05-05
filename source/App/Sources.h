@@ -164,6 +164,7 @@ public:
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
     {
         transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
+        sample_rate = sampleRate;
     }
     void releaseResources() override
     {
@@ -184,7 +185,7 @@ public:
     void setPosition(int p) override
     {
         Stop();
-        transportSource.setPosition(p);
+        transportSource.setPosition(p * (double)sample_rate);
         transportSource.start();
     }
     void Stop() override
@@ -194,7 +195,7 @@ public:
 
     int getCurrentPosition() override
     {
-        return transportSource.getCurrentPosition();
+        return (double)transportSource.getCurrentPosition() * (double)sample_rate;
     }
     int getLength() override
     {
@@ -203,6 +204,7 @@ public:
     std::string path;
     juce::AudioTransportSource transportSource;
     juce::File file;
+    double sample_rate;
     //  juce::TimeSliceThread thread{"audio file preview"};
 };
 
@@ -625,4 +627,58 @@ private:
     int n;
     int length;
     float &seconds;
+};
+
+class TrimSource : public StartableSource
+{
+public:
+    TrimSource(float &start_at, float &t) : seconds(t), start_seconds(start_at)
+    {
+        source = nullptr;
+        n = 0;
+    }
+    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
+    {
+        length = sampleRate * seconds;
+        start = sampleRate * start_seconds;
+        source->prepareToPlay(samplesPerBlockExpected, sampleRate);
+    }
+    void releaseResources() override
+    {
+        source->releaseResources();
+    }
+    void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
+    {
+        source->getNextAudioBlock(bufferToFill);
+        n += bufferToFill.numSamples;
+    }
+
+    void setPosition(int p) override
+    {
+        if (source == nullptr)
+            return;
+        source->setPosition(p + start);
+        n = p;
+    }
+    void Stop() override
+    {
+        source->Stop();
+    }
+    int getCurrentPosition() override
+    {
+        return n;
+    }
+    int getLength() override
+    {
+        return length;
+    }
+
+    StartableSource *source;
+
+private:
+    int n;
+    int length;
+    int start;
+    float &seconds;
+    float &start_seconds;
 };

@@ -424,6 +424,67 @@ private:
     }
 };
 
+class TrimNode : public EditorNode, NumberInput::Listener
+{
+public:
+    enum InputKeys
+    {
+        audio_,
+        start_,
+        duration_,
+    };
+    enum OutputKeys
+    {
+        audio_out
+    };
+    TrimNode() : EditorNode()
+    {
+        t = 1;
+        start = 0;
+        audio = nullptr;
+        header = NodeNames::TrimNode;
+        type_id = (int)NodeTypes::TrimNode;
+        registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
+        registerInput(InputKeys::audio_, "audio", PinType::Audio);
+        registerInput(InputKeys::start_, "start at (seconds)", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(start)));
+        registerInput(InputKeys::duration_, "duration (seconds)", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(t)));
+    };
+
+private:
+    float t;
+    float start;
+    StartableSource *audio;
+
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
+    {
+        if (pin == inputs[InputKeys::start_])
+        {
+            start = std::any_cast<float>(data);
+            ((NumberInput *)input_components[InputKeys::start_])->update();
+        }
+        if (pin == inputs[InputKeys::duration_])
+        {
+            t = std::any_cast<float>(data);
+            ((NumberInput *)input_components[InputKeys::duration_])->update();
+        }
+        if (pin == inputs[InputKeys::audio_])
+        {
+            audio = std::any_cast<StartableSource *>(data);
+        }
+        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
+        {
+            if (audio == nullptr)
+            {
+                return;
+            }
+            auto res = new TrimSource(start, t);
+            res->source = audio;
+            Value source = (StartableSource *)(res);
+            input->node->trigger(source, input);
+        }
+    }
+};
+
 // function
 
 class FunctionMathNode : public EditorNode, juce::ComboBox::Listener

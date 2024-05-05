@@ -17,7 +17,8 @@ enum class NodeTypes
     NumberNode,
     LineNode,
     ConcatenateFunction,
-    RepeatNode
+    RepeatNode,
+    TrimNode
 };
 
 struct NodeNames
@@ -37,6 +38,7 @@ struct NodeNames
     static const std::string LineNode;
     static const std::string ConcatenateFunction;
     static const std::string RepeatNode;
+    static const std::string TrimNode;
 };
 const std::string NodeNames::OutputNode = "Output";
 const std::string NodeNames::FileReader = "File Reader";
@@ -53,3 +55,4 @@ const std::string NodeNames::NumberNode = "Number";
 const std::string NodeNames::LineNode = "Line";
 const std::string NodeNames::ConcatenateFunction = "Function Concatenate";
 const std::string NodeNames::RepeatNode = "Repeat";
+const std::string NodeNames::TrimNode = "Trim";

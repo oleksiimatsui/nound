@@ -23,6 +23,7 @@ public:
         factories[NodeTypes::ConcatenateFunction] = new NodeCreateCommand<ConcatenateFNode>;
         factories[NodeTypes::RepeatNode] = new NodeCreateCommand<RepeatNode>;
         factories[NodeTypes::NumberNode] = new NodeCreateCommand<NumberNode>;
+        factories[NodeTypes::TrimNode] = new NodeCreateCommand<TrimNode>;
     }
 
     EditorNode *getNode(int type_id) override
