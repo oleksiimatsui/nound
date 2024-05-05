@@ -81,10 +81,16 @@ public:
 
     void fileChanged() override
     {
-        auto fs = new FileSource();
-        fs->setFile(name);
-
-        source.reset(fs);
+        if (source.get() == nullptr)
+        {
+            auto fs = new FileSource();
+            fs->setFile(name);
+            source.reset(fs);
+        }
+        else
+        {
+            source->setFile(name);
+        }
     };
 
 private:

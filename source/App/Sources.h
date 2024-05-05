@@ -2,23 +2,14 @@
 #include <JuceHeader.h>
 #include "Functions.h"
 
-template <class T>
-class ValueHolder2
-{
-public:
-    virtual T *getState() = 0;
-};
-
 class StartableSource : public juce::AudioSource
 {
 public:
     StartableSource(){};
     virtual void setPosition(int pos = 0) = 0;
-    virtual void Stop() = 0;
     virtual int getLength() = 0;
     virtual int getCurrentPosition() = 0;
-    //   virtual void setCurrentPosition(int position) = 0;
-    virtual bool isPlaying()
+    bool isPlaying()
     {
         return getCurrentPosition() < getLength();
     }
@@ -83,7 +74,7 @@ public:
     {
         if (source == nullptr)
             return;
-        source->Stop();
+        //   source->Stop();
         audioSourcePlayer.setSource(nullptr);
         deviceManager.removeAudioCallback(&audioSourcePlayer);
         deviceManager.closeAudioDevice();
@@ -124,10 +115,6 @@ public:
     {
         source->setPosition(p);
     };
-    void Stop() override
-    {
-        source->Stop();
-    };
     int getCurrentPosition() override
     {
         return source->getCurrentPosition();
@@ -149,6 +136,7 @@ public:
     void setFile(std::string filepath)
     {
         transportSource.stop();
+        thread.stopThread(-1);
 
         path = filepath;
         file = juce::File(filepath);
@@ -187,15 +175,9 @@ public:
     };
     void setPosition(int p) override
     {
-        Stop();
-        transportSource.setPosition(p * (double)sample_rate);
+        transportSource.setPosition(p / (double)sample_rate);
         transportSource.start();
     }
-    void Stop() override
-    {
-        transportSource.stop();
-    }
-
     int getCurrentPosition() override
     {
         return (double)transportSource.getCurrentPosition() * (double)sample_rate;
@@ -251,9 +233,6 @@ public:
     void setPosition(int p) override
     {
         n = p;
-    }
-    void Stop() override
-    {
     }
     int getCurrentPosition() override
     {
@@ -370,13 +349,6 @@ public:
             return;
         s2->setPosition(p);
         s1->setPosition(p);
-    }
-    void Stop() override
-    {
-        if (s1 == nullptr || s2 == nullptr)
-            return;
-        s1->Stop();
-        s2->Stop();
     }
 
     int getCurrentPosition() override
@@ -496,13 +468,7 @@ public:
             }
         }
     }
-    void Stop() override
-    {
-        for (auto &s : sources)
-        {
-            s->Stop();
-        }
-    }
+
     int getCurrentPosition() override
     {
         return n;
@@ -611,10 +577,7 @@ public:
         source->setPosition(p % source->getLength());
         n = p;
     }
-    void Stop() override
-    {
-        source->Stop();
-    }
+
     int getCurrentPosition() override
     {
         return n;
@@ -662,10 +625,6 @@ public:
             return;
         source->setPosition(p + start);
         n = p;
-    }
-    void Stop() override
-    {
-        source->Stop();
     }
     int getCurrentPosition() override
     {
