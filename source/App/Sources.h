@@ -600,6 +600,8 @@ public:
                     }
                     n++;
                 }
+                // switch to the beginning of the track
+                source->setPosition(0);
             }
             else
             {
@@ -614,8 +616,6 @@ public:
                     n++;
                 }
             }
-            // switch to the beginning of the track
-            source->setPosition(0);
         }
     }
 
