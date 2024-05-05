@@ -153,6 +153,7 @@ public:
             auto node = factory->getNode(info.type_id);
             nodes[id] = node;
             node->id = id;
+            node->graph = this;
             Graph::id = std::max(id, Graph::id);
             for (auto &[in_id, val] : info.input_values)
             {
