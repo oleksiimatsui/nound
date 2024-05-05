@@ -133,7 +133,7 @@ public:
     FileSource()
     {
     }
-    void setFile(std::string filepath)
+    bool setFile(std::string filepath)
     {
         transportSource.stop();
         thread.stopThread(-1);
@@ -143,13 +143,23 @@ public:
         juce::AudioFormatManager formatManager;
         formatManager.registerBasicFormats();
         juce::AudioFormatReader *reader = formatManager.createReaderFor(file);
-        jassert((reader != nullptr));
+        if (reader == nullptr)
+            return false;
         thread.startThread();
         juce::AudioFormatReaderSource *readerSource = new juce::AudioFormatReaderSource(reader, true);
         //   thread.startThread(juce::Thread::Priority::normal);
-        transportSource.setSource(readerSource,
-                                  32768, &thread,
-                                  readerSource->getAudioFormatReader()->sampleRate);
+        if (readerSource->getAudioFormatReader() != false)
+        {
+            transportSource.setSource(readerSource,
+                                      32768, &thread,
+                                      readerSource->getAudioFormatReader()->sampleRate);
+            setPosition(0);
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
     {
@@ -163,15 +173,15 @@ public:
     }
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
-        if (transportSource.isPlaying())
-        {
-            transportSource.getNextAudioBlock(bufferToFill);
-        }
-        else
-        {
-            bufferToFill.clearActiveBufferRegion();
-            return;
-        }
+        //  if (transportSource.isPlaying())
+        //   {
+        transportSource.getNextAudioBlock(bufferToFill);
+        //  }
+        //  else
+        //   {
+        //      bufferToFill.clearActiveBufferRegion();
+        //       return;
+        //  }
     };
     void setPosition(int p) override
     {
@@ -454,17 +464,15 @@ public:
         {
             length_counter += sources[i]->getLength();
             int next_counter = length_counter + sources[i + 1]->getLength();
-            if (next_counter > n)
+            if (next_counter <= n)
+            {
+            }
+            else
             {
                 int currentTrack = i;
                 offset = n - prev_counter;
                 sources[currentTrack]->setPosition(offset);
                 break;
-            }
-            else
-            {
-                prev_counter = length_counter;
-                sources[i]->setPosition(sources[i]->getLength());
             }
         }
     }

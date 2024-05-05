@@ -232,6 +232,8 @@ public:
         {
             if (auto out = dynamic_cast<OutputNode *>(n))
             {
+                if (out->result == nullptr)
+                    return;
                 player.setSource(out->result);
                 player.Start();
             }

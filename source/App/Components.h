@@ -49,7 +49,7 @@ public:
         }
     };
 
-    FileInput(StringRef *vr, FileInput::Listener *l) : ValueRefComponent(vr)
+    FileInput(StringRef *vr, FileInput::Listener *l) : ValueRefComponent(vr), str(vr->value)
     {
         listener = l;
         button.onClick = [this]()
@@ -120,10 +120,11 @@ public:
     }
     void update() override
     {
-        label.setText(toString(), juce::NotificationType::dontSendNotification);
+        label.setText(str, juce::NotificationType::dontSendNotification);
     }
 
 private:
+    std::string &str;
     juce::TextButton button{"Browse"};
     juce::Label label{{}, "file is not chosen"};
     Listener *listener;

@@ -27,6 +27,49 @@ public:
 
 // audio
 
+class AudioNode : public EditorNode
+{
+public:
+    AudioNode(int _output_id) : EditorNode(), output_id(_output_id){
+
+                                              };
+    ~AudioNode()
+    {
+        for (auto &s : sources)
+        {
+            delete s;
+            s = nullptr;
+        }
+        sources.clear();
+    }
+
+protected:
+    void clearSources()
+    {
+        for (auto &s : sources)
+        {
+            delete s;
+            s = nullptr;
+        }
+        sources.clear();
+    }
+    void passSources(std::function<StartableSource *()> func)
+    {
+        auto connection_inputs = graph->getInputsOfOutput(outputs[output_id]);
+        for (int i = 0; i < connection_inputs.size(); i++)
+        {
+            auto input = connection_inputs[i];
+            if (i == sources.size())
+            {
+                sources.push_back(func());
+            }
+            input->node->trigger((Value)((StartableSource *)sources[i]), input);
+        }
+    }
+    std::vector<StartableSource *> sources;
+    int output_id;
+};
+
 class OutputNode : public EditorNode
 {
 public:
@@ -36,6 +79,7 @@ public:
     };
     OutputNode() : EditorNode()
     {
+        result = nullptr;
         header = NodeNames::OutputNode;
         type_id = (int)NodeTypes::Output;
         inputs[InputKeys::audio_] = new Input(InputKeys::audio_, "audio", PinType::Audio, this);
@@ -81,38 +125,39 @@ public:
 
     void fileChanged() override
     {
-        if (source.get() == nullptr)
+        for (auto &s : sources)
         {
-            auto fs = new FileSource();
-            fs->setFile(name);
-            source.reset(fs);
-        }
-        else
-        {
-            source->setFile(name);
+            s->setFile(name);
         }
     };
 
 private:
     std::string name;
     juce::URL *currentAudioFile;
-    std::unique_ptr<FileSource> source;
+    std::vector<std::unique_ptr<FileSource>> sources;
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
-        if (pin == inputs[InputKeys::predecessor])
-        {
-        }
+        if (name == "")
+            return;
         auto connection_inputs = graph->getInputsOfOutput(outputs[OutputKeys::audio_]);
         for (int i = 0; i < connection_inputs.size(); i++)
         {
             auto input = connection_inputs[i];
-            input->node->trigger((Value)((StartableSource *)source.get()), input);
+            if (i == sources.size())
+            {
+                std::unique_ptr<FileSource> f;
+                f.reset(new FileSource());
+                sources.push_back(std::move(f));
+            }
+            bool r = sources[i]->setFile(name);
+            if (r)
+                input->node->trigger((Value)((StartableSource *)sources[i].get()), input);
         }
     }
 };
 
-class ReverbNode : public EditorNode, public NumberInput::Listener
+class ReverbNode : public AudioNode, public NumberInput::Listener
 {
 public:
     enum InputKeys
@@ -131,12 +176,12 @@ public:
     };
     void valueChanged() override
     {
-        for (auto &r : results)
+        for (auto &r : sources)
         {
-            r->r->setParameters(p);
+            ((ReverbSource *)r)->r->setParameters(p);
         }
     }
-    ReverbNode() : EditorNode()
+    ReverbNode() : AudioNode(0)
     {
         int i = 0;
         int h = ThemeProvider::getCurrentTheme()->nodeTextHeight;
@@ -153,35 +198,26 @@ public:
 
         valueChanged();
     };
-    ~ReverbNode()
-    {
-        for (auto &n : results)
-            delete n;
-        results.clear();
-    }
 
 private:
     juce::Reverb::Parameters p;
-    std::vector<ReverbSource *> results;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
-        for (auto &n : results)
-            delete n;
-        results.clear();
-        StartableSource *input_source = std::any_cast<StartableSource *>(data);
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
+        if (sources.size() != 0)
         {
-            auto fs = new ReverbSource();
-            results.push_back(fs);
-            fs->setSource(input_source);
-            fs->r->setParameters(p);
-            Value source = (StartableSource *)(fs);
-            input->node->trigger(source, input);
+            clearSources();
         }
+        StartableSource *input_source = std::any_cast<StartableSource *>(data);
+        passSources([&]() -> StartableSource *
+                    {
+                    auto fs = new ReverbSource();
+                    fs->setSource(input_source);
+                    fs->r->setParameters(p); 
+                    return fs; });
     }
 };
 
-class AudioMathNode : public EditorNode, juce::ComboBox::Listener
+class AudioMathNode : public AudioNode, juce::ComboBox::Listener
 {
 public:
     enum InputKeys
@@ -194,7 +230,7 @@ public:
         audio_out
     };
 
-    AudioMathNode()
+    AudioMathNode() : AudioNode(0)
     {
         s1 = nullptr;
         s2 = nullptr;
@@ -205,6 +241,7 @@ public:
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
         registerInternal(new Selector(new IntRef(selected), this, std::vector<std::string>({"Add", "Subtract", "Multiply", "Divide"}), 1));
     };
+
     enum Operations
     {
         add = 1,
@@ -237,10 +274,15 @@ private:
     std::unique_ptr<MathAudioSource::State> state;
     StartableSource *s1;
     StartableSource *s2;
+    std::vector<StartableSource *> sources;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (StartableSource *f = std::any_cast<StartableSource *>(data))
         {
+            if (sources.size() != 0)
+            {
+                clearSources();
+            }
             if (pin == inputs[InputKeys::audio_1])
             {
                 s1 = f;
@@ -251,21 +293,19 @@ private:
             }
             if (s1 != nullptr && s2 != nullptr)
             {
-                for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
-                {
-                    auto s = new MathAudioSource();
-                    s->s1 = s1;
-                    s->s2 = s2;
-                    s->state = &state;
-                    Value source = (StartableSource *)(s);
-                    input->node->trigger(source, input);
-                }
+                passSources([&]() -> StartableSource *
+                            {
+                            auto s = new MathAudioSource();
+                            s->s1 = s1;
+                            s->s2 = s2;
+                            s->state = &state;
+                            return s; });
             }
         }
     }
 };
 
-class OscillatorNode : public EditorNode, NumberInput::Listener
+class OscillatorNode : public AudioNode, NumberInput::Listener
 {
 public:
     enum InputKeys
@@ -280,7 +320,7 @@ public:
         audio_out
     };
 
-    OscillatorNode() : EditorNode()
+    OscillatorNode() : AudioNode(0)
     {
         header = NodeNames::Oscillator;
         type_id = (int)NodeTypes::Oscillator;
@@ -299,6 +339,10 @@ private:
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        if (sources.size() != 0)
+        {
+            clearSources();
+        }
         if (pin == inputs[InputKeys::frequency_])
         {
             frequency = std::any_cast<float>(data);
@@ -313,20 +357,18 @@ private:
         {
             wave = std::any_cast<F *>(data);
         }
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
-        {
-            if (wave == nullptr)
-            {
-                wave = new Sine(std::vector<F **>({}));
-            }
-            auto fs = new Osc(t, frequency, phase, &wave);
-            Value source = (StartableSource *)(fs);
-            input->node->trigger(source, input);
-        }
+        passSources([&]() -> StartableSource *
+                    {
+                    if (wave == nullptr)
+                    {
+                        wave = new Sine(std::vector<F **>({}));
+                    }
+                    auto fs = new Osc(t, frequency, phase, &wave);
+                    return fs; });
     }
 };
 
-class ConcatenateNode : public EditorNode
+class ConcatenateNode : public AudioNode
 {
 public:
     enum InputKeys
@@ -338,7 +380,7 @@ public:
     {
         audio_out
     };
-    ConcatenateNode()
+    ConcatenateNode() : AudioNode(0)
     {
         s1 = nullptr;
         s2 = nullptr;
@@ -356,6 +398,10 @@ private:
     {
         if (StartableSource *f = std::any_cast<StartableSource *>(data))
         {
+            if (sources.size() != 0)
+            {
+                clearSources();
+            }
             if (pin == inputs[InputKeys::audio_1])
             {
                 s1 = f;
@@ -364,21 +410,20 @@ private:
             {
                 s2 = f;
             }
+
             if (s1 != nullptr && s2 != nullptr)
             {
-                for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
-                {
-                    auto s = new ConcatenationSource();
-                    s->sources = std::vector<StartableSource *>({s1, s2});
-                    Value source = (StartableSource *)(s);
-                    input->node->trigger(source, input);
-                }
+                passSources([&]() -> StartableSource *
+                            {
+                            auto s = new ConcatenationSource();
+                            s->sources = std::vector<StartableSource *>({s1, s2});
+                            return s; });
             }
         }
     }
 };
 
-class RepeatNode : public EditorNode, NumberInput::Listener
+class RepeatNode : public AudioNode, NumberInput::Listener
 {
 public:
     enum InputKeys
@@ -390,7 +435,7 @@ public:
     {
         audio_out
     };
-    RepeatNode() : EditorNode()
+    RepeatNode() : AudioNode(0)
     {
         t = 1;
         audio = nullptr;
@@ -407,6 +452,10 @@ private:
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        if (sources.size() != 0)
+        {
+            clearSources();
+        }
         if (pin == inputs[InputKeys::seconds_])
         {
             t = std::any_cast<float>(data);
@@ -416,21 +465,20 @@ private:
         {
             audio = std::any_cast<StartableSource *>(data);
         }
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
+
+        if (audio == nullptr)
         {
-            if (audio == nullptr)
-            {
-                return;
-            }
-            auto res = new RepeatSource(t);
-            res->source = audio;
-            Value source = (StartableSource *)(res);
-            input->node->trigger(source, input);
+            return;
         }
+        passSources([&]() -> StartableSource *
+                    {
+                            auto res = new RepeatSource(t);
+                            res->source = audio;
+                            return res; });
     }
 };
 
-class TrimNode : public EditorNode, NumberInput::Listener
+class TrimNode : public AudioNode, NumberInput::Listener
 {
 public:
     enum InputKeys
@@ -443,7 +491,7 @@ public:
     {
         audio_out
     };
-    TrimNode() : EditorNode()
+    TrimNode() : AudioNode(0)
     {
         t = 1;
         start = 0;
@@ -463,6 +511,10 @@ private:
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        if (sources.size() != 0)
+        {
+            clearSources();
+        }
         if (pin == inputs[InputKeys::start_])
         {
             start = std::any_cast<float>(data);
@@ -477,17 +529,17 @@ private:
         {
             audio = std::any_cast<StartableSource *>(data);
         }
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::audio_out]))
+
+        if (audio == nullptr)
         {
-            if (audio == nullptr)
-            {
-                return;
-            }
-            auto res = new TrimSource(start, t);
-            res->source = audio;
-            Value source = (StartableSource *)(res);
-            input->node->trigger(source, input);
+            return;
         }
+
+        passSources([&]() -> StartableSource *
+                    {
+                            auto res = new TrimSource(start, t);
+            res->source = audio;
+                            return res; });
     }
 };
 
