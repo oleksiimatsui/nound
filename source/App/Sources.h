@@ -149,22 +149,25 @@ public:
     void setFile(std::string filepath)
     {
         transportSource.stop();
+
         path = filepath;
         file = juce::File(filepath);
         juce::AudioFormatManager formatManager;
         formatManager.registerBasicFormats();
         juce::AudioFormatReader *reader = formatManager.createReaderFor(file);
         jassert((reader != nullptr));
+        thread.startThread();
         juce::AudioFormatReaderSource *readerSource = new juce::AudioFormatReaderSource(reader, true);
         //   thread.startThread(juce::Thread::Priority::normal);
         transportSource.setSource(readerSource,
-                                  0, nullptr,
+                                  32768, &thread,
                                   readerSource->getAudioFormatReader()->sampleRate);
     }
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
     {
         transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
         sample_rate = sampleRate;
+        thread.startThread();
     }
     void releaseResources() override
     {
@@ -205,7 +208,7 @@ public:
     juce::AudioTransportSource transportSource;
     juce::File file;
     double sample_rate;
-    //  juce::TimeSliceThread thread{"audio file preview"};
+    juce::TimeSliceThread thread{"audio file reading thread"};
 };
 
 class Osc : public StartableSource
