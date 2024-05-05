@@ -389,7 +389,7 @@ public:
         t = 1;
         audio = nullptr;
         header = NodeNames::RepeatNode;
-        type_id = (int)NodeTypes::Oscillator;
+        type_id = (int)NodeTypes::RepeatNode;
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
         registerInput(InputKeys::audio_, "audio", PinType::Audio);
         registerInput(InputKeys::seconds_, "seconds", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(t)));

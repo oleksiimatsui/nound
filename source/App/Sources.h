@@ -395,7 +395,8 @@ class ConcatenationSource : public StartableSource
 public:
     ConcatenationSource()
     {
-        currentTrack = 0;
+        length = 0;
+        offset = 0;
         numOfTracks = 0;
         n = 0;
     }
@@ -419,73 +420,49 @@ public:
     }
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
-        if (currentTrack >= numOfTracks)
+        int currentTrack = 0;
+        // find current track
+        for (int i = 0; i < numOfTracks; i++)
         {
-            currentTrack = 0;
-            bufferToFill.clearActiveBufferRegion();
-            return;
-        }
-        auto s = sources[currentTrack];
-        int length = s->getLength();
-        int position = s->getCurrentPosition();
-        if (position >= length)
-        {
-            // if the track is ended, read from the next track
-            currentTrack++;
-            if (currentTrack >= numOfTracks)
+            auto s = sources[i];
+            if (s->getCurrentPosition() < s->getLength())
             {
-                bufferToFill.clearActiveBufferRegion();
-                return;
+                currentTrack = i;
+                break;
             }
-            s = sources[currentTrack];
-            s->setPosition(0);
-            length = s->getLength();
-            position = s->getCurrentPosition();
         }
 
-        // write to the buffer as much data as we can
-        juce::AudioSourceChannelInfo currentTrackCI(bufferToFill);
-        currentTrackCI.startSample = 0;
-        currentTrackCI.numSamples = juce::jmin(bufferToFill.numSamples, s->getLength() - s->getCurrentPosition());
-        s->getNextAudioBlock(currentTrackCI);
-        for (auto sample = 0; sample < currentTrackCI.numSamples; ++sample)
+        // fill buffer with tracks
+        int last_buffer_size = 0;
+        for (int i = currentTrack; i < numOfTracks; i++)
         {
-            for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+            auto s = sources[i];
+            if (i != currentTrack)
             {
-                auto buffer = currentTrackCI.buffer->getReadPointer(channel, bufferToFill.startSample);
-                auto output = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
-                output[sample] = buffer[sample];
+                // start every new track from beginning
+                sources[i]->setPosition(0);
             }
-            n++;
-        }
-
-        // if the track ended in the middle of buffer
-        if (currentTrackCI.numSamples != bufferToFill.numSamples)
-        {
-            // if it was not the last track,
-            // fill the second part of block with the next track
-            if (currentTrack != numOfTracks - 1)
+            juce::AudioSourceChannelInfo currentTrackCI(bufferToFill);
+            currentTrackCI.startSample = 0;
+            currentTrackCI.numSamples = juce::jmin(bufferToFill.numSamples, s->getLength() - s->getCurrentPosition());
+            s->getNextAudioBlock(currentTrackCI);
+            for (auto sample = 0; sample < currentTrackCI.numSamples; ++sample)
             {
-                juce::AudioSourceChannelInfo nextTrackCI(bufferToFill);
-                nextTrackCI.startSample = 0;
-                nextTrackCI.numSamples = bufferToFill.numSamples - currentTrackCI.numSamples;
-                sources[currentTrack + 1]->setPosition();
-                sources[currentTrack + 1]->getNextAudioBlock(nextTrackCI);
-                for (auto sample = currentTrackCI.numSamples; sample < bufferToFill.numSamples; ++sample)
+                for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
                 {
-                    for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
-                    {
-                        auto buffer = nextTrackCI.buffer->getReadPointer(channel, 0);
-                        auto output = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
-                        output[sample] = buffer[sample];
-                    }
-                    n++;
+                    auto buffer = currentTrackCI.buffer->getReadPointer(channel, bufferToFill.startSample);
+                    auto output = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
+                    output[last_buffer_size + sample] = buffer[sample];
                 }
-                // switch to the next track
-                currentTrack++;
+                n++;
             }
+            last_buffer_size = currentTrackCI.numSamples;
+            // if current track fills the buffer, break
+            if (currentTrackCI.numSamples == bufferToFill.numSamples)
+                break;
         }
     }
+
     void setPosition(int p) override
     {
         if (sources.size() == 0)
@@ -502,12 +479,16 @@ public:
             int next_counter = length_counter + sources[i + 1]->getLength();
             if (next_counter > n)
             {
-                currentTrack = i;
+                int currentTrack = i;
                 offset = n - prev_counter;
                 sources[currentTrack]->setPosition(offset);
                 break;
             }
-            prev_counter = length_counter;
+            else
+            {
+                prev_counter = length_counter;
+                sources[i]->setPosition(sources[i]->getLength());
+            }
         }
     }
     void Stop() override
@@ -530,7 +511,6 @@ public:
 
 private:
     int numOfTracks;
-    int currentTrack;
     int n;
     int length;
     int offset;
