@@ -17,9 +17,9 @@ target_sources(App
     MainComponent.h
     NodeTypes.h
     NodeDropdown.h
-    Components.h 
-    Functions.h
-    AppTheme.cpp
+    Components.h  
+    Functions.h 
+    AppTheme.cpp 
     Main.cpp
     NodeTypesFactory.h
     NodeTypesRegistry.h 

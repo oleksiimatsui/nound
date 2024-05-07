@@ -2,19 +2,31 @@
 #include <JuceHeader.h>
 #include "Functions.h"
 
-class StartableSource : public juce::AudioSource
+class PositionableSource : public juce::AudioSource
 {
 public:
-    StartableSource(){};
+    PositionableSource(){
+        // start_position_in_seconds = 0;
+    };
+
     virtual void setPosition(int pos = 0) = 0;
     virtual int getLength() = 0;
+    virtual float getLengthInSeconds() = 0;
     virtual int getCurrentPosition() = 0;
+    void setPositionInSeconds(float position, double sampleRate)
+    {
+        //  start_position_in_seconds = position;
+        int start_position = position * sampleRate;
+        setPosition(start_position);
+    }
     bool isPlaying()
     {
         return getCurrentPosition() < getLength();
     }
 
 private:
+    //  float start_position_in_seconds;
+    // int start_position;
 };
 
 class SoundOutputSource : public juce::AudioSource
@@ -25,7 +37,7 @@ public:
         source = nullptr;
     };
 
-    void setSource(StartableSource *s)
+    void setSource(PositionableSource *s)
     {
         source = s;
     };
@@ -68,7 +80,12 @@ public:
         if (source == nullptr)
             return;
         setAudioChannels(0, 2);
-        source->setPosition(0);
+    }
+    void setPosition(int p)
+    {
+        if (source == nullptr)
+            return;
+        source->setPosition(p);
     }
     void Stop()
     {
@@ -80,13 +97,33 @@ public:
         deviceManager.closeAudioDevice();
     }
 
+    int getLength()
+    {
+        if (source == nullptr)
+            return 0;
+        return source->getLength();
+    }
+    float getLengthInSeconds()
+    {
+        if (source == nullptr)
+            return 0;
+        return source->getLengthInSeconds();
+    }
+    void setPositionInSeconds(float offset, double sampleRate)
+    {
+        if (source == nullptr)
+            return;
+        source->setPositionInSeconds(offset, sampleRate);
+    }
+
 private:
-    StartableSource *source;
+    PositionableSource *source;
     juce::AudioDeviceManager deviceManager;
     juce::AudioSourcePlayer audioSourcePlayer;
+    float offset_sec;
 };
 
-class ReverbSource : public StartableSource
+class ReverbSource : public PositionableSource
 {
 public:
     ReverbSource()
@@ -94,7 +131,7 @@ public:
         source = nullptr;
         r = nullptr;
     }
-    void setSource(StartableSource *s)
+    void setSource(PositionableSource *s)
     {
         source = s;
         r = new juce::ReverbAudioSource(s, false);
@@ -123,11 +160,15 @@ public:
     {
         return source->getLength();
     }
-    StartableSource *source;
+    float getLengthInSeconds() override
+    {
+        return source->getLengthInSeconds();
+    }
+    PositionableSource *source;
     juce::ReverbAudioSource *r;
 };
 
-class FileSource : public StartableSource
+class FileSource : public PositionableSource
 {
 public:
     FileSource()
@@ -196,6 +237,10 @@ public:
     {
         return transportSource.getTotalLength();
     }
+    float getLengthInSeconds() override
+    {
+        return transportSource.getLengthInSeconds();
+    }
     std::string path;
     juce::AudioTransportSource transportSource;
     juce::File file;
@@ -203,10 +248,10 @@ public:
     juce::TimeSliceThread thread{"audio file reading thread"};
 };
 
-class Osc : public StartableSource
+class Osc : public PositionableSource
 {
 public:
-    Osc(float &t, float &f, float &p, F **w) : time(t), frequency(f), phase(p), StartableSource()
+    Osc(float &t, float &f, float &p, F **w) : time(t), frequency(f), phase(p), PositionableSource()
     {
         samples_count = 0;
         n = 0;
@@ -252,6 +297,10 @@ public:
     {
         return samples_count;
     }
+    float getLengthInSeconds() override
+    {
+        return time;
+    }
 
 private:
     float &frequency;
@@ -264,7 +313,7 @@ private:
     F **waveform;
 };
 
-class MathAudioSource : public StartableSource
+class MathAudioSource : public PositionableSource
 {
 public:
     class State
@@ -369,15 +418,18 @@ public:
     {
         return std::min(s1->getLength(), s2->getLength());
     }
-
-    StartableSource *s1;
-    StartableSource *s2;
+    float getLengthInSeconds() override
+    {
+        return std::min(s1->getLengthInSeconds(), s2->getLengthInSeconds());
+    }
+    PositionableSource *s1;
+    PositionableSource *s2;
     juce::AudioBuffer<float> temp1;
     juce::AudioBuffer<float> temp2;
     std::unique_ptr<State> *state;
 };
 
-class ConcatenationSource : public StartableSource
+class ConcatenationSource : public PositionableSource
 {
 public:
     ConcatenationSource()
@@ -454,6 +506,7 @@ public:
     {
         if (sources.size() == 0)
             return;
+        // numOfTracks = sources.size();
         //     n = 0;
         //     currentTrack = 0;
         // return;
@@ -485,8 +538,18 @@ public:
     {
         return length;
     }
+    float getLengthInSeconds() override
+    {
+        float sec = 0;
 
-    std::vector<StartableSource *> sources;
+        for (auto &s : sources)
+        {
+            sec += s->getLengthInSeconds();
+        }
+        return sec;
+    }
+
+    std::vector<PositionableSource *> sources;
 
 private:
     int numOfTracks;
@@ -495,7 +558,7 @@ private:
     int offset;
 };
 
-class RepeatSource : public StartableSource
+class RepeatSource : public PositionableSource
 {
 public:
     RepeatSource(float &t) : seconds(t)
@@ -594,8 +657,12 @@ public:
     {
         return length;
     }
+    float getLengthInSeconds() override
+    {
+        return seconds;
+    }
 
-    StartableSource *source;
+    PositionableSource *source;
 
 private:
     int n;
@@ -603,7 +670,7 @@ private:
     float &seconds;
 };
 
-class TrimSource : public StartableSource
+class TrimSource : public PositionableSource
 {
 public:
     TrimSource(float &start_at, float &t) : seconds(t), start_seconds(start_at)
@@ -642,8 +709,12 @@ public:
     {
         return length;
     }
+    float getLengthInSeconds() override
+    {
+        return seconds;
+    }
 
-    StartableSource *source;
+    PositionableSource *source;
 
 private:
     int n;

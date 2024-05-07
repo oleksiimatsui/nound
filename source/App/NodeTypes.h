@@ -53,7 +53,7 @@ protected:
         }
         sources.clear();
     }
-    void passSources(std::function<StartableSource *()> func)
+    void passSources(std::function<PositionableSource *()> func)
     {
         auto connection_inputs = graph->getInputsOfOutput(outputs[output_id]);
         for (int i = 0; i < connection_inputs.size(); i++)
@@ -63,10 +63,10 @@ protected:
             {
                 sources.push_back(func());
             }
-            input->node->trigger((Value)((StartableSource *)sources[i]), input);
+            input->node->trigger((Value)((PositionableSource *)sources[i]), input);
         }
     }
-    std::vector<StartableSource *> sources;
+    std::vector<PositionableSource *> sources;
     int output_id;
 };
 
@@ -85,14 +85,14 @@ public:
         inputs[InputKeys::audio_] = new Input(InputKeys::audio_, "audio", PinType::Audio, this);
     };
     // SoundOutputSource source;
-    StartableSource *result;
+    PositionableSource *result;
 
 private:
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (pin == inputs[InputKeys::audio_])
         {
-            result = std::any_cast<StartableSource *>(data);
+            result = std::any_cast<PositionableSource *>(data);
             //  source.setSource(f);
             //  source.Start();
         }
@@ -152,7 +152,7 @@ private:
             }
             bool r = sources[i]->setFile(name);
             if (r)
-                input->node->trigger((Value)((StartableSource *)sources[i].get()), input);
+                input->node->trigger((Value)((PositionableSource *)sources[i].get()), input);
         }
     }
 };
@@ -207,8 +207,8 @@ private:
         {
             clearSources();
         }
-        StartableSource *input_source = std::any_cast<StartableSource *>(data);
-        passSources([&]() -> StartableSource *
+        PositionableSource *input_source = std::any_cast<PositionableSource *>(data);
+        passSources([&]() -> PositionableSource *
                     {
                     auto fs = new ReverbSource();
                     fs->setSource(input_source);
@@ -272,12 +272,12 @@ public:
 private:
     int selected;
     std::unique_ptr<MathAudioSource::State> state;
-    StartableSource *s1;
-    StartableSource *s2;
-    std::vector<StartableSource *> sources;
+    PositionableSource *s1;
+    PositionableSource *s2;
+    std::vector<PositionableSource *> sources;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
-        if (StartableSource *f = std::any_cast<StartableSource *>(data))
+        if (PositionableSource *f = std::any_cast<PositionableSource *>(data))
         {
             if (sources.size() != 0)
             {
@@ -293,7 +293,7 @@ private:
             }
             if (s1 != nullptr && s2 != nullptr)
             {
-                passSources([&]() -> StartableSource *
+                passSources([&]() -> PositionableSource *
                             {
                             auto s = new MathAudioSource();
                             s->s1 = s1;
@@ -357,7 +357,7 @@ private:
         {
             wave = std::any_cast<F *>(data);
         }
-        passSources([&]() -> StartableSource *
+        passSources([&]() -> PositionableSource *
                     {
                     if (wave == nullptr)
                     {
@@ -392,11 +392,11 @@ public:
     };
 
 private:
-    StartableSource *s1;
-    StartableSource *s2;
+    PositionableSource *s1;
+    PositionableSource *s2;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
-        if (StartableSource *f = std::any_cast<StartableSource *>(data))
+        if (PositionableSource *f = std::any_cast<PositionableSource *>(data))
         {
             if (sources.size() != 0)
             {
@@ -413,10 +413,10 @@ private:
 
             if (s1 != nullptr && s2 != nullptr)
             {
-                passSources([&]() -> StartableSource *
+                passSources([&]() -> PositionableSource *
                             {
                             auto s = new ConcatenationSource();
-                            s->sources = std::vector<StartableSource *>({s1, s2});
+                            s->sources = std::vector<PositionableSource *>({s1, s2});
                             return s; });
             }
         }
@@ -448,7 +448,7 @@ public:
 
 private:
     float t = 1;
-    StartableSource *audio;
+    PositionableSource *audio;
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
@@ -463,14 +463,14 @@ private:
         }
         if (pin == inputs[InputKeys::audio_])
         {
-            audio = std::any_cast<StartableSource *>(data);
+            audio = std::any_cast<PositionableSource *>(data);
         }
 
         if (audio == nullptr)
         {
             return;
         }
-        passSources([&]() -> StartableSource *
+        passSources([&]() -> PositionableSource *
                     {
                             auto res = new RepeatSource(t);
                             res->source = audio;
@@ -507,7 +507,7 @@ public:
 private:
     float t;
     float start;
-    StartableSource *audio;
+    PositionableSource *audio;
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
@@ -527,7 +527,7 @@ private:
         }
         if (pin == inputs[InputKeys::audio_])
         {
-            audio = std::any_cast<StartableSource *>(data);
+            audio = std::any_cast<PositionableSource *>(data);
         }
 
         if (audio == nullptr)
@@ -535,7 +535,7 @@ private:
             return;
         }
 
-        passSources([&]() -> StartableSource *
+        passSources([&]() -> PositionableSource *
                     {
                             auto res = new TrimSource(start, t);
             res->source = audio;

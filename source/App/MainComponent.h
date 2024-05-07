@@ -73,7 +73,9 @@ public:
         fb.flexDirection = direction;
         for (auto &e : elements)
         {
-            fb.items.add(juce::FlexItem(e->getWidth(), getHeight() - padding * 2, *e).withMargin(margin));
+            e->setSize(e->getWidth(), getHeight() - padding * 2);
+            juce::FlexItem f = juce::FlexItem(e->getWidth(), 1, *e).withMargin(margin);
+            fb.items.add(f);
         }
         fb.performLayout(getLocalBounds());
     }
@@ -157,7 +159,8 @@ class MainComponent : public juce::Component
 public:
     MainComponent() : g(new RecoverableNodeGraph()), node_editor(g.get()),
                       dropdown_panel(g.get()),
-                      stretcher(false, &dropdown_panel, &node_editor, 0.1)
+                      stretcher(false, &dropdown_panel, &node_editor, 0.1),
+                      playing(false)
     {
         setTitle("Welcome to Nound");
         setDescription("Sound node editor");
@@ -184,27 +187,69 @@ public:
         toolbar.addElements(std::vector<juce::Component *>({&file_button}));
         addAndMakeVisible(toolbar);
 
-        play_panel.setColor(App::ThemeProvider::getCurrentTheme()->backgroundColor);
-        play_panel.setBorder(juce::Colours::black);
-        play_panel.setJustify(juce::FlexBox::JustifyContent::center);
-        play_panel.setAlign(juce::FlexBox::AlignContent::center);
-        play_panel.setMargin(8);
-        play_panel.setPadding(8);
-        play_panel.addElements(std::vector<juce::Component *>({&play_button, &stop_button}));
-
         juce::Image play_img = getImageFromAssets("play_white.png");
-        play_button.setImages(true, true, true, play_img, 1.0f, juce::Colour(), play_img, 0.5f, juce::Colour(), play_img, 0.5f, juce::Colour());
-        play_button.setSize(50, 100);
-        play_button.onClick = [this]
+        start_button.setImages(true, true, true, play_img, 1.0f, juce::Colour(), play_img, 0.5f, juce::Colour(), play_img, 0.5f, juce::Colour());
+        start_button.setSize(36, 36);
+        start_button.onClick = [this]
         { play(); };
 
         juce::Image pause_img = getImageFromAssets("pause_white.png");
-        stop_button.setImages(true, true, true, pause_img, 1.0f, juce::Colour(), pause_img, 0.5f, juce::Colour(), pause_img, 0.5f, juce::Colour());
-        stop_button.setSize(50, 100);
+        pause_button.setImages(true, true, true, pause_img, 1.0f, juce::Colour(), pause_img, 0.5f, juce::Colour(), pause_img, 0.5f, juce::Colour());
+        pause_button.setSize(36, 36);
+        pause_button.onClick = [this]
+        { if(playing){
+            pause();
+         } else {
+            resume();
+         } };
+
+        juce::Image stop_img = getImageFromAssets("stop_white.png");
+        stop_button.setImages(true, true, true, stop_img, 1.0f, juce::Colour(), stop_img, 0.5f, juce::Colour(), stop_img, 0.5f, juce::Colour());
+        stop_button.setSize(36, 20);
         stop_button.onClick = [this]
         {
             stop();
         };
+
+        position_slider.setRange(0, 1);
+        // position_slider.addListener(this);
+        position_slider.setSize(200, 20);
+        position_slider.setValue(0);
+        position_slider.setSliderStyle(juce::Slider::LinearBar);
+        position_slider.setTextBoxStyle(juce::Slider::TextEntryBoxPosition::TextBoxLeft, false, position_slider.getTextBoxWidth(), position_slider.getTextBoxHeight());
+
+        position_slider.onValueChange = [this]()
+        {
+            //  if(position_slider.valueChanged)
+            bool played = playing;
+            if (playing)
+            {
+                pause();
+            }
+            player.setPosition(position_slider.getValue() * player.getLength());
+            if (played)
+                resume();
+        };
+
+        label.setText("position", juce::NotificationType::dontSendNotification);
+        label.setSize(200, 20);
+        v.addComponent(&label);
+        v.setSize(200, 36);
+        v.addComponent(&position_slider);
+
+        play_panel.setColor(App::ThemeProvider::getCurrentTheme()->backgroundColor.darker(0));
+        //    play_panel.setColor(juce::Colours::aliceblue);
+        play_panel.setBorder(juce::Colours::black);
+        play_panel.setJustify(juce::FlexBox::JustifyContent::center);
+        play_panel.setAlign(juce::FlexBox::AlignContent::center);
+        play_panel.setMargin(2);
+        play_panel.setPadding(16);
+        play_panel.addElements(std::vector<juce::Component *>({
+            &start_button,
+            &pause_button,
+            &stop_button,
+            &v,
+        }));
 
         addAndMakeVisible(play_panel);
         setSize(500, 500);
@@ -235,14 +280,31 @@ public:
                 if (out->result == nullptr)
                     return;
                 player.setSource(out->result);
+                //  player.setPosition(position_slider.getValue() * player.getLengthInSeconds() * SAMPLE_RATE);
+
+                player.prepareToPlay(480, SAMPLE_RATE);
+                player.setPosition(position_slider.getValue() * player.getLengthInSeconds() * SAMPLE_RATE);
+                playing = true;
                 player.Start();
             }
         };
     }
     void stop()
     {
-        auto graph = &g;
         player.Stop();
+        playing = false;
+        player.setPosition(position_slider.getValue() * player.getLength());
+    }
+
+    void pause()
+    {
+        playing = false;
+        player.Stop();
+    }
+    void resume()
+    {
+        playing = true;
+        player.Start();
     }
 
     void save_as()
@@ -395,7 +457,7 @@ public:
                 n->trigger(d, nullptr);
             }
         };
-        StartableSource *output = nullptr;
+        PositionableSource *output = nullptr;
         for (auto &[id, n] : g.get()->getNodes())
         {
             if (auto out = dynamic_cast<OutputNode *>(n))
@@ -411,12 +473,12 @@ public:
 
         const int size = 480;
         writer.reset(format.createWriterFor(new juce::FileOutputStream(file),
-                                            48000.0,
+                                            SAMPLE_RATE,
                                             2,
                                             24,
                                             {},
                                             0));
-        output->prepareToPlay(480, 48000);
+        output->prepareToPlay(480, SAMPLE_RATE);
         output->setPosition();
         while (output->isPlaying())
         {
@@ -437,13 +499,19 @@ private:
     NodeEditorComponent node_editor;
     DropdownComponent dropdown_panel;
     StretchComponent stretcher;
-    juce::ImageButton play_button;
+    juce::ImageButton start_button;
+    juce::ImageButton pause_button;
     juce::ImageButton stop_button;
     MenuButton file_button;
     FlexWithColor toolbar;
     FlexWithColor play_panel;
+    juce::Slider position_slider;
+    juce::Label label;
+    Vertical v;
     std::unique_ptr<juce::FileChooser> fc = nullptr;
     juce::String selected_file_path;
+    bool playing;
+    const int SAMPLE_RATE = 4800;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };
 
