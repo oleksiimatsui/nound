@@ -274,33 +274,37 @@ private:
     std::unique_ptr<MathAudioSource::State> state;
     PositionableSource *s1;
     PositionableSource *s2;
-    std::vector<PositionableSource *> sources;
+    int counter = 0;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
         if (PositionableSource *f = std::any_cast<PositionableSource *>(data))
         {
-            if (sources.size() != 0)
+            if (counter == getConnectionsNumber())
             {
-                clearSources();
+                counter = 0;
             }
+            clearSources();
             if (pin == inputs[InputKeys::audio_1])
             {
                 s1 = f;
+                counter++;
             }
             else if (pin == inputs[InputKeys::audio_2])
             {
                 s2 = f;
+                counter++;
             }
-            if (s1 != nullptr && s2 != nullptr)
-            {
-                passSources([&]() -> PositionableSource *
-                            {
+            if (counter == getConnectionsNumber())
+                if (s1 != nullptr && s2 != nullptr)
+                {
+                    passSources([&]() -> PositionableSource *
+                                {
                             auto s = new MathAudioSource();
                             s->s1 = s1;
                             s->s2 = s2;
                             s->state = &state;
                             return s; });
-            }
+                }
         }
     }
 };
@@ -357,6 +361,11 @@ private:
         {
             wave = std::any_cast<F *>(data);
         }
+        else
+        {
+            wave = nullptr;
+        }
+
         passSources([&]() -> PositionableSource *
                     {
                     if (wave == nullptr)
@@ -394,8 +403,13 @@ public:
 private:
     PositionableSource *s1;
     PositionableSource *s2;
+    int counter = 0;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        if (counter == getConnectionsNumber())
+        {
+            counter = 0;
+        }
         if (PositionableSource *f = std::any_cast<PositionableSource *>(data))
         {
             if (sources.size() != 0)
@@ -405,20 +419,24 @@ private:
             if (pin == inputs[InputKeys::audio_1])
             {
                 s1 = f;
+                counter++;
             }
             else if (pin == inputs[InputKeys::audio_2])
             {
                 s2 = f;
+                counter++;
             }
 
-            if (s1 != nullptr && s2 != nullptr)
-            {
-                passSources([&]() -> PositionableSource *
-                            {
+            if (counter == getConnectionsNumber())
+
+                if (s1 != nullptr && s2 != nullptr)
+                {
+                    passSources([&]() -> PositionableSource *
+                                {
                             auto s = new ConcatenationSource();
                             s->sources = std::vector<PositionableSource *>({s1, s2});
                             return s; });
-            }
+                }
         }
     }
 };
@@ -604,10 +622,14 @@ private:
     std::unique_ptr<F> result;
     F *val1;
     F *val2;
-    float res;
+    int counter = 0;
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        if (counter == getConnectionsNumber())
+        {
+            counter = 0;
+        }
         if (pin != nullptr)
         {
             if (F *f = std::any_cast<F *>(data))
@@ -615,19 +637,21 @@ private:
                 if (pin == inputs[InputKeys::f])
                 {
                     val1 = f;
+                    counter++;
                 }
                 else if (pin == inputs[InputKeys::g])
                 {
                     val2 = f;
+                    counter++;
                 }
             }
         }
-
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::h]))
-        {
-            Value source = result.get();
-            input->node->trigger(source, input);
-        }
+        if (counter == getConnectionsNumber())
+            for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::h]))
+            {
+                Value source = result.get();
+                input->node->trigger(source, input);
+            }
     }
 };
 
@@ -658,17 +682,20 @@ private:
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        int counter = 0;
         if (pin == inputs[InputKeys::number])
         {
             t = std::any_cast<float>(data);
             ((NumberInput *)input_components[InputKeys::number])->update();
+            counter++;
         }
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::func]))
-        {
+        if (counter == getConnectionsNumber())
+            for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::func]))
+            {
 
-            Value source = (F *)(fs);
-            input->node->trigger(source, input);
-        }
+                Value source = (F *)(fs);
+                input->node->trigger(source, input);
+            }
     }
 };
 
@@ -724,21 +751,25 @@ public:
 private:
     int selected_wave;
     F *func;
-
+    int counter = 0;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
-        delete func;
-        func = nullptr;
+        if (counter == getConnectionsNumber())
+        {
+            counter = 0;
+        }
         if (pin == inputs[InputKeys::function])
         {
             auto f = std::any_cast<F *>(data);
             func = f;
+            counter++;
         }
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::wave_out]))
-        {
-            Value source = waveform.get();
-            input->node->trigger(source, input);
-        }
+        if (counter == getConnectionsNumber())
+            for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::wave_out]))
+            {
+                Value source = waveform.get();
+                input->node->trigger(source, input);
+            }
     }
 };
 
@@ -760,6 +791,11 @@ public:
         type_id = (int)NodeTypes::Random;
         registerOutput(OutputKeys::random, "random", PinType::Function);
     };
+    ~RandomNode() override
+    {
+        //    delete randomF.get();
+        randomF.reset(nullptr);
+    }
 
 private:
     std::unique_ptr<F> randomF;
@@ -805,29 +841,36 @@ private:
     float start;
     float end;
     F *f;
+    int counter = 0;
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
-        delete f;
-        f = nullptr;
+        if (counter == getConnectionsNumber())
+        {
+            counter = 0;
+        }
         if (pin == inputs[InputKeys::function_in])
         {
             auto f_ = std::any_cast<F *>(data);
             f = f_;
+            counter++;
         }
         if (pin == inputs[InputKeys::start_])
         {
             start = std::any_cast<float>(data);
+            counter++;
         }
-        if (pin == inputs[InputKeys::start_])
+        if (pin == inputs[InputKeys::end_])
         {
             end = std::any_cast<float>(data);
+            counter++;
         }
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::line_]))
-        {
-            Value source = line.get();
-            input->node->trigger(source, input);
-        }
+        if (counter == getConnectionsNumber())
+            for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::line_]))
+            {
+                Value source = line.get();
+                input->node->trigger(source, input);
+            }
     }
 };
 
@@ -859,9 +902,13 @@ private:
     std::unique_ptr<F> result;
     F *val1;
     F *val2;
-
+    int counter = 0;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        if (counter == getConnectionsNumber())
+        {
+            counter = 0;
+        }
         if (pin != nullptr)
         {
             if (F *f = std::any_cast<F *>(data))
@@ -869,21 +916,23 @@ private:
                 if (pin == inputs[InputKeys::f])
                 {
                     val1 = f;
+                    counter++;
                 }
                 else if (pin == inputs[InputKeys::g])
                 {
                     val2 = f;
+                    counter++;
                 }
             }
         }
-
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::h]))
-        {
-            if (result.get() == nullptr)
-                return;
-            Value source = result.get();
-            input->node->trigger(source, input);
-        }
+        if (counter == getConnectionsNumber())
+            for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::h]))
+            {
+                if (result.get() == nullptr)
+                    return;
+                Value source = result.get();
+                input->node->trigger(source, input);
+            }
     }
 };
 
@@ -951,6 +1000,7 @@ private:
     float res;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        int counter = 0;
         if (pin != nullptr)
         {
             if (float f = std::any_cast<float>(data))
@@ -959,20 +1009,22 @@ private:
                 {
                     val1 = f;
                     input_components[InputKeys::number_1]->update();
+                    counter++;
                 }
                 else if (pin == inputs[InputKeys::number_2])
                 {
                     val2 = f;
                     ((NumberInput *)input_components[InputKeys::number_2])->update();
+                    counter++;
                 }
             }
         }
-
-        for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::number_out]))
-        {
-            Value source = (float)state->operation(val1, val2);
-            input->node->trigger(source, input);
-        }
+        if (counter == getConnectionsNumber())
+            for (auto &input : graph->getInputsOfOutput(outputs[OutputKeys::number_out]))
+            {
+                Value source = (float)state->operation(val1, val2);
+                input->node->trigger(source, input);
+            }
     }
 };
 
@@ -1009,6 +1061,7 @@ private:
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        int counter = 0;
         if (pin != nullptr)
         {
             if (float f = std::any_cast<float>(data))
@@ -1017,9 +1070,11 @@ private:
                 {
                     value = f;
                     input_components[InputKeys::number_]->update();
+                    counter++;
                 }
             }
         }
-        valueChanged();
+        if (counter == getConnectionsNumber())
+            valueChanged();
     }
 };

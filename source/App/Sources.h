@@ -412,6 +412,8 @@ public:
 
     int getCurrentPosition() override
     {
+        if (s1 == nullptr)
+            return 0;
         return s1->getCurrentPosition();
     }
     int getLength() override

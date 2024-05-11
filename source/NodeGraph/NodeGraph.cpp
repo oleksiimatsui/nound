@@ -159,6 +159,19 @@ std::vector<Input *> Graph::getInputsOfOutput(Output *pin)
     return pins;
 }
 
+int Graph::getOutputsOfInputSize(Input *pin)
+{
+    std::vector<Output *> pins;
+    for (auto &[id, c] : connections)
+    {
+        if (c->pin_to == pin)
+        {
+            pins.push_back(c->pin_from);
+        }
+    }
+    return pins.size();
+}
+
 Connection *Graph::addConnection(Pin *pin1, Pin *pin2)
 {
     ConnectionBuilder factory;

@@ -44,7 +44,7 @@ class Node
 {
 public:
     Node();
-    ~Node();
+    virtual ~Node();
     std::string header;
     std::map<int, Output *> outputs = {};
     std::map<int, Input *> inputs = {};
@@ -110,6 +110,7 @@ public:
     void registerListener(GraphListener *listener);
     void triggerPin(Output *pin, Value &Value);
     std::vector<Input *> getInputsOfOutput(Output *pin);
+    int getOutputsOfInputSize(Input *pin);
 
 protected:
     std::unordered_map<int, Node *> nodes;

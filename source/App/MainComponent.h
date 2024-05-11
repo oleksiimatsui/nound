@@ -261,8 +261,7 @@ public:
     void paint(juce::Graphics &g)
     {
     }
-
-    void play()
+    void build()
     {
         auto graph = g.get();
         Value d = nullptr;
@@ -273,6 +272,11 @@ public:
                 n->trigger(d, nullptr);
             }
         };
+    }
+    void play()
+    {
+        build();
+        auto graph = g.get();
         for (auto &[id, n] : graph->getNodes())
         {
             if (auto out = dynamic_cast<OutputNode *>(n))
@@ -442,21 +446,14 @@ public:
 
     void exportToFile(std::string path)
     {
+        stop();
         juce::File file = juce::File(path);
         if (file.existsAsFile())
             file.deleteFile();
         juce::AudioBuffer<float> buffer;
         juce::WavAudioFormat format;
         std::unique_ptr<juce::AudioFormatWriter> writer;
-        auto graph = g.get();
-        Value d = nullptr;
-        for (auto &[id, n] : graph->getNodes())
-        {
-            if (graph->getInputConnectionsOfNode(id).size() == 0)
-            {
-                n->trigger(d, nullptr);
-            }
-        };
+        build();
         PositionableSource *output = nullptr;
         for (auto &[id, n] : g.get()->getNodes())
         {
@@ -467,10 +464,7 @@ public:
         };
         if (output == nullptr)
             return;
-        //    std::unique_ptr<juce::FileOutputStream> filestream(file.createOutputStream());
-        // filestream->setPosition(0);
-        // filestream->truncate();
-
+        output->setPosition(0);
         const int size = 480;
         writer.reset(format.createWriterFor(new juce::FileOutputStream(file),
                                             SAMPLE_RATE,

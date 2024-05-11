@@ -20,7 +20,7 @@ public:
         y = 0;
         type_id = 0;
     };
-    ~EditorNode()
+    virtual ~EditorNode() override
     {
         for (auto &[_, n] : input_components)
             delete n;
@@ -73,7 +73,15 @@ public:
             return nullptr;
         return internal_components[0];
     };
-
+    int getConnectionsNumber()
+    {
+        int number_of_connections = 0;
+        for (auto &[_, input] : inputs)
+        {
+            number_of_connections += graph->getOutputsOfInputSize(input);
+        }
+        return number_of_connections;
+    }
     int x, y;
     int type_id;
     std::map<int, ValueRefComponent *> input_components;
