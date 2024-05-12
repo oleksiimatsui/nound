@@ -30,7 +30,7 @@ public:
     {
         return factories[(NodeTypes)type_id]->execute();
     }
-    std::map<NodeTypes, AbstractNodeCreateCommand *> factories;
+    std::unordered_map<NodeTypes, AbstractNodeCreateCommand *> factories;
 
     ~NoundTypesFactory()
     {

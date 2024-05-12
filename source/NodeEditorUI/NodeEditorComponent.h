@@ -378,8 +378,6 @@ public:
 
     void resized() override
     {
-        auto w = getWidth();
-        auto h = getHeight();
     }
 
     void addNode()
@@ -397,7 +395,7 @@ private:
     std::unordered_map<int, ConnectionComponent *> connection_components;
     Theme *theme;
     int scale = 100;
-    float size = 10000;
+    const float size = 10000;
     Graph *graph;
 
     std::unique_ptr<ConnectionPreview> connection_preview;

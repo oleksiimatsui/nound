@@ -100,7 +100,7 @@ Connection *ConnectionBuilder::build()
 
 Graph::Graph()
 {
-    id = 0;
+    auto_increment = 0;
 };
 std::unordered_map<int, Node *> Graph::getNodes()
 {
@@ -123,7 +123,7 @@ void Graph::addNode(Node *node)
 {
     node->graph = this;
     node->id = getId();
-    nodes[id] = node;
+    nodes[auto_increment] = node;
     for (auto &l : listeners)
     {
         l->NodeAdded(node);
@@ -180,7 +180,7 @@ Connection *Graph::addConnection(Pin *pin1, Pin *pin2)
     Connection *connection;
     connection = factory.build();
     connection->id = getId();
-    connections[id] = (connection);
+    connections[auto_increment] = (connection);
     for (auto &l : listeners)
     {
         l->ConnectionAdded(connection);
@@ -190,8 +190,8 @@ Connection *Graph::addConnection(Pin *pin1, Pin *pin2)
 
 int Graph::getId()
 {
-    id++;
-    return id;
+    auto_increment++;
+    return auto_increment;
 }
 
 std::vector<int> Graph::getConnectionsOfNode(int node_id)

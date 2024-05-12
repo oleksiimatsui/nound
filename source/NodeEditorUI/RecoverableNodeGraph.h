@@ -17,7 +17,7 @@ struct GraphInfo
         int type_id;
         int x;
         int y;
-        std::map<int, std::string> input_values;
+        std::unordered_map<int, std::string> input_values;
         std::vector<std::string> internal_values;
     };
     struct connection
@@ -27,7 +27,7 @@ struct GraphInfo
         int pin_from_number;
         int pin_to_number;
     };
-    std::map<int, node> nodes;
+    std::unordered_map<int, node> nodes;
     std::unordered_map<int, connection> connections;
 };
 
@@ -154,7 +154,7 @@ public:
             nodes[id] = node;
             node->id = id;
             node->graph = this;
-            Graph::id = std::max(id, Graph::id);
+            Graph::auto_increment = std::max(id, Graph::auto_increment);
             for (auto &[in_id, val] : info.input_values)
             {
                 node->input_components[in_id]->fromString(val);
@@ -180,11 +180,11 @@ public:
             connection = factory.build();
             connection->id = id;
             connections[id] = connection;
-            Graph::id = std::max(id, Graph::id);
+            Graph::auto_increment = std::max(id, Graph::auto_increment);
         }
     }
 
-    GraphInfo get_info(std::map<int, juce::Point<int>> positions)
+    GraphInfo get_info(std::unordered_map<int, juce::Point<int>> positions)
     {
         GraphInfo info;
         for (auto &[id, n] : nodes)

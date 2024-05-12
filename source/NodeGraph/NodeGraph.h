@@ -116,6 +116,6 @@ protected:
     std::unordered_map<int, Node *> nodes;
     std::unordered_map<int, Connection *> connections;
     int getId();
-    int id;
+    int auto_increment;
     std::vector<GraphListener *> listeners;
 };

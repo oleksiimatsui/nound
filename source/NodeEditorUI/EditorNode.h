@@ -84,7 +84,7 @@ public:
     }
     int x, y;
     int type_id;
-    std::map<int, ValueRefComponent *> input_components;
+    std::unordered_map<int, ValueRefComponent *> input_components;
     std::vector<ValueRefComponent *> internal_components;
     // std::unique_ptr<Vertical> internal_component;
 };

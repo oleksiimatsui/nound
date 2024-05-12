@@ -284,9 +284,7 @@ public:
                 if (out->result == nullptr)
                     return;
                 player.setSource(out->result);
-                //  player.setPosition(position_slider.getValue() * player.getLengthInSeconds() * SAMPLE_RATE);
-
-                player.prepareToPlay(480, SAMPLE_RATE);
+                player.prepareToPlay(SAMPLES_PER_BLOCK_EXPECTED, SAMPLE_RATE);
                 player.setPosition(position_slider.getValue() * player.getLengthInSeconds() * SAMPLE_RATE);
                 playing = true;
                 player.Start();
@@ -417,7 +415,7 @@ public:
     }
     void saveGraphInfo(juce::String path)
     {
-        std::map<int, juce::Point<int>> positions;
+        std::unordered_map<int, juce::Point<int>> positions;
         for (auto &[id, node] : g.get()->getNodes())
         {
             positions[id] = node_editor.getNodePosition(id);
@@ -487,7 +485,7 @@ public:
     }
 
 private:
-    SoundOutputSource player;
+    Player player;
     std::unique_ptr<RecoverableNodeGraph> g;
     std::unique_ptr<TypesRecoverFactory> factory;
     NodeEditorComponent node_editor;
@@ -506,6 +504,7 @@ private:
     juce::String selected_file_path;
     bool playing;
     const int SAMPLE_RATE = 4800;
+    const int SAMPLES_PER_BLOCK_EXPECTED = 480;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };
 

@@ -29,12 +29,13 @@ private:
     // int start_position;
 };
 
-class SoundOutputSource : public juce::AudioSource
+class Player : public juce::AudioSource
 {
 public:
-    SoundOutputSource()
+    Player()
     {
         source = nullptr;
+        offset_sec = 0;
     };
 
     void setSource(PositionableSource *s)
