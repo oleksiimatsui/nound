@@ -203,6 +203,8 @@ private:
     juce::Reverb::Parameters p;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        if (pin == nullptr)
+            return;
         if (sources.size() != 0)
         {
             clearSources();
@@ -277,35 +279,36 @@ private:
     int counter = 0;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
-        if (PositionableSource *f = std::any_cast<PositionableSource *>(data))
+        if (pin == nullptr)
+            return;
+        PositionableSource *f = std::any_cast<PositionableSource *>(data);
+        if (counter == getConnectionsNumber())
         {
-            if (counter == getConnectionsNumber())
+            counter = 0;
+        }
+        clearSources();
+        if (pin == inputs[InputKeys::audio_1])
+        {
+            s1 = f;
+            counter++;
+        }
+        else if (pin == inputs[InputKeys::audio_2])
+        {
+            s2 = f;
+            counter++;
+        }
+
+        if (counter == getConnectionsNumber())
+            if (s1 != nullptr && s2 != nullptr)
             {
-                counter = 0;
-            }
-            clearSources();
-            if (pin == inputs[InputKeys::audio_1])
-            {
-                s1 = f;
-                counter++;
-            }
-            else if (pin == inputs[InputKeys::audio_2])
-            {
-                s2 = f;
-                counter++;
-            }
-            if (counter == getConnectionsNumber())
-                if (s1 != nullptr && s2 != nullptr)
-                {
-                    passSources([&]() -> PositionableSource *
-                                {
+                passSources([&]() -> PositionableSource *
+                            {
                             auto s = new MathAudioSource();
                             s->s1 = s1;
                             s->s2 = s2;
                             s->state = &state;
                             return s; });
-                }
-        }
+            }
     }
 };
 
@@ -406,6 +409,8 @@ private:
     int counter = 0;
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        if (pin == nullptr)
+            return;
         if (counter == getConnectionsNumber())
         {
             counter = 0;
@@ -470,6 +475,8 @@ private:
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        if (pin == nullptr)
+            return;
         if (sources.size() != 0)
         {
             clearSources();
@@ -529,6 +536,8 @@ private:
 
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        if (pin == nullptr)
+            return;
         if (sources.size() != 0)
         {
             clearSources();

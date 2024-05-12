@@ -368,10 +368,10 @@ public:
     }
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
     {
-        if (s1 == nullptr || s2 == nullptr)
-            return;
-        s2->prepareToPlay(samplesPerBlockExpected, sampleRate);
-        s1->prepareToPlay(samplesPerBlockExpected, sampleRate);
+        if (s1 != nullptr)
+            s2->prepareToPlay(samplesPerBlockExpected, sampleRate);
+        if (s2 != nullptr)
+            s1->prepareToPlay(samplesPerBlockExpected, sampleRate);
     }
     void releaseResources() override
     {
@@ -382,17 +382,14 @@ public:
     }
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
-        if (s1 == nullptr || s2 == nullptr)
-        {
-            bufferToFill.clearActiveBufferRegion();
-            return;
-        }
         temp1.setSize(juce::jmax(1, bufferToFill.buffer->getNumChannels()),
                       bufferToFill.buffer->getNumSamples());
         temp2.setSize(juce::jmax(1, bufferToFill.buffer->getNumChannels()),
                       bufferToFill.buffer->getNumSamples());
-        s1->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp1, 0, bufferToFill.numSamples));
-        s2->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp2, 0, bufferToFill.numSamples));
+        if (s1 != nullptr)
+            s1->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp1, 0, bufferToFill.numSamples));
+        if (s2 != nullptr)
+            s2->getNextAudioBlock(juce::AudioSourceChannelInfo(&temp2, 0, bufferToFill.numSamples));
         for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
         {
             auto buffer1 = temp1.getReadPointer(channel, bufferToFill.startSample);
