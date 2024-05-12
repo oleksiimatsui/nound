@@ -338,6 +338,9 @@ public:
     }
     void new_graph()
     {
+        GraphInfo info;
+        g.get()->recover(info, factory.get());
+        node_editor.update();
     }
     void open()
     {
@@ -399,6 +402,7 @@ public:
 
     void setGraphInfo(juce::String path)
     {
+        stop();
         std::ifstream file(path.getCharPointer());
         if (file.is_open())
         {
