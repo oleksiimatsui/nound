@@ -633,6 +633,59 @@ private:
     }
 };
 
+class BandPassNode : public AudioNode, public NumberInput::Listener
+{
+public:
+    enum InputKeys
+    {
+        audio_in,
+        f0_,
+        f1_,
+    };
+    enum OutputKeys
+    {
+        audio_out
+    };
+    void valueChanged() override
+    {
+        for (auto &r : sources)
+        {
+            ((FilterSource *)r)->update();
+        }
+    }
+    BandPassNode() : AudioNode(0)
+    {
+        f0 = 400;
+        f1 = 480;
+        header = NodeNames::FilterNode;
+        type_id = (int)NodeTypes::FilterNode;
+        registerInput(InputKeys::audio_in, "audio", PinType::Audio);
+        registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
+        registerInput(InputKeys::f0_, "bottom frequency", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(f0)));
+        registerInput(InputKeys::f1_, "top frequency", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(f1)));
+        valueChanged();
+    };
+
+private:
+    juce::IIRCoefficients coefficients;
+    float f0, f1;
+
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
+    {
+        if (pin == nullptr)
+            return;
+
+        clearSources();
+
+        PositionableSource *input_source = std::any_cast<PositionableSource *>(data);
+        passSources([&]() -> PositionableSource *
+                    {
+                    auto fs = new FilterSource(f0,f1);
+                    fs->setSource(input_source);
+                    return fs; });
+    }
+};
+
 // function
 
 class FunctionMathNode : public EditorNode, juce::ComboBox::Listener

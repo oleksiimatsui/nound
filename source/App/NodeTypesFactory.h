@@ -25,6 +25,7 @@ public:
         factories[NodeTypes::NumberNode] = new NodeCreateCommand<NumberNode>;
         factories[NodeTypes::TrimNode] = new NodeCreateCommand<TrimNode>;
         factories[NodeTypes::ResamplingNode] = new NodeCreateCommand<ResamplingNode>;
+        factories[NodeTypes::FilterNode] = new NodeCreateCommand<BandPassNode>;
     }
 
     EditorNode *getNode(int type_id) override

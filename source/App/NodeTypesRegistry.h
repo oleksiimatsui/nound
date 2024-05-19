@@ -19,7 +19,8 @@ enum class NodeTypes
     ConcatenateFunction,
     RepeatNode,
     TrimNode,
-    ResamplingNode
+    ResamplingNode,
+    FilterNode
 };
 
 struct NodeNames
@@ -41,6 +42,7 @@ struct NodeNames
     static const std::string RepeatNode;
     static const std::string TrimNode;
     static const std::string ResamplingNode;
+    static const std::string FilterNode;
 };
 const std::string NodeNames::OutputNode = "Output";
 const std::string NodeNames::FileReader = "File Reader";
@@ -59,3 +61,4 @@ const std::string NodeNames::ConcatenateFunction = "Function Concatenate";
 const std::string NodeNames::RepeatNode = "Repeat";
 const std::string NodeNames::TrimNode = "Trim";
 const std::string NodeNames::ResamplingNode = "Resampling";
+const std::string NodeNames::FilterNode = "Band Pass Filter";

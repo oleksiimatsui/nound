@@ -771,3 +771,68 @@ private:
     PositionableSource *input;
     float &samplesInPerOutputSample;
 };
+
+class FilterSource : public PositionableSource
+{
+public:
+    FilterSource(float &f0_, float &f1_) : f0(f0_), f1(f1_)
+    {
+        source = nullptr;
+        r = nullptr;
+    }
+    ~FilterSource() override
+    {
+        delete r;
+        r = nullptr;
+    }
+    void setSource(PositionableSource *s)
+    {
+        source = s;
+        r = new juce::IIRFilterAudioSource(s, false);
+    }
+    void prepareToPlay(int samplesPerBlockExpected, double _sampleRate) override
+    {
+        sampleRate = _sampleRate;
+        update();
+        r->prepareToPlay(samplesPerBlockExpected, sampleRate);
+    }
+    void update()
+    {
+        int frequency = std::abs(f0 + f1) / 2;
+        double Q = frequency / (std::abs(f0 - f1) == 0 ? 6 : std::abs(f0 - f1));
+        c = c.makeBandPass(sampleRate, frequency, Q);
+        r->setCoefficients(c);
+    }
+    void releaseResources() override
+    {
+        r->releaseResources();
+    }
+    void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
+    {
+        r->getNextAudioBlock(bufferToFill);
+    };
+    void setPosition(int p) override
+    {
+        source->setPosition(p);
+    };
+    int getCurrentPosition() override
+    {
+        return source->getCurrentPosition();
+    }
+    int getLength() override
+    {
+        return source->getLength();
+    }
+    float getLengthInSeconds() override
+    {
+        return source->getLengthInSeconds();
+    }
+
+private:
+    PositionableSource *source;
+    juce::IIRFilterAudioSource *r;
+    juce::IIRCoefficients c;
+    float &f0;
+    float &f1;
+    int sampleRate;
+};
