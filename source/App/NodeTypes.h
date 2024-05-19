@@ -570,6 +570,69 @@ private:
     }
 };
 
+class ResamplingNode : public AudioNode, NumberInput::Listener
+{
+public:
+    enum InputKeys
+    {
+        audio_,
+        coefficient_,
+    };
+    enum OutputKeys
+    {
+        audio_out
+    };
+    ResamplingNode() : AudioNode(0)
+    {
+        coefficient = 1;
+        audio = nullptr;
+        header = NodeNames::ResamplingNode;
+        type_id = (int)NodeTypes::ResamplingNode;
+        registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
+        registerInput(InputKeys::audio_, "audio", PinType::Audio);
+        registerInput(InputKeys::coefficient_, "coefficient", PinType::Number, new NumberInput(this, 0.01, 100, new FloatRef(coefficient)));
+    };
+    void valueChanged() override
+    {
+        for (auto &s : sources)
+        {
+            ((ResamplingAudioSource *)s)->updateCoefficient();
+        }
+    }
+
+private:
+    float coefficient;
+    PositionableSource *audio;
+
+    void trigger(Value &data, [[maybe_unused]] Input *pin) override
+    {
+        if (pin == nullptr)
+            return;
+
+        clearSources();
+
+        if (pin == inputs[InputKeys::coefficient_])
+        {
+            coefficient = std::any_cast<float>(data);
+            ((NumberInput *)input_components[InputKeys::coefficient_])->update();
+        }
+        if (pin == inputs[InputKeys::audio_])
+        {
+            audio = std::any_cast<PositionableSource *>(data);
+        }
+
+        if (audio == nullptr)
+        {
+            return;
+        }
+
+        passSources([&]() -> PositionableSource *
+                    {
+                            auto res = new ResamplingAudioSource(audio,coefficient);
+                            return res; });
+    }
+};
+
 // function
 
 class FunctionMathNode : public EditorNode, juce::ComboBox::Listener

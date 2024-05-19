@@ -24,6 +24,7 @@ public:
         factories[NodeTypes::RepeatNode] = new NodeCreateCommand<RepeatNode>;
         factories[NodeTypes::NumberNode] = new NodeCreateCommand<NumberNode>;
         factories[NodeTypes::TrimNode] = new NodeCreateCommand<TrimNode>;
+        factories[NodeTypes::ResamplingNode] = new NodeCreateCommand<ResamplingNode>;
     }
 
     EditorNode *getNode(int type_id) override

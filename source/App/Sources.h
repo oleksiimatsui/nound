@@ -723,3 +723,51 @@ private:
     float &seconds;
     float &start_seconds;
 };
+
+class ResamplingAudioSource : public PositionableSource
+{
+public:
+    ResamplingAudioSource(PositionableSource *source, float &samplesCoefficient) : samplesInPerOutputSample(samplesCoefficient)
+    {
+        input = source;
+        resampling.reset(new juce::ResamplingAudioSource(input, false, 2));
+        resampling->setResamplingRatio(samplesInPerOutputSample);
+    }
+    void updateCoefficient()
+    {
+        resampling->setResamplingRatio(samplesInPerOutputSample);
+    }
+    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
+    {
+        resampling->prepareToPlay(samplesPerBlockExpected, sampleRate);
+    }
+    void releaseResources() override
+    {
+        resampling->releaseResources();
+    }
+    void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
+    {
+        resampling->getNextAudioBlock(bufferToFill);
+    };
+    void setPosition(int p) override
+    {
+        input->setPosition(p);
+    };
+    int getCurrentPosition() override
+    {
+        return (float)input->getCurrentPosition() / samplesInPerOutputSample;
+    }
+    int getLength() override
+    {
+        return (float)input->getLength() / samplesInPerOutputSample;
+    }
+    float getLengthInSeconds() override
+    {
+        return input->getLengthInSeconds() / samplesInPerOutputSample;
+    }
+
+private:
+    std::unique_ptr<juce::ResamplingAudioSource> resampling;
+    PositionableSource *input;
+    float &samplesInPerOutputSample;
+};

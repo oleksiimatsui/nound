@@ -72,15 +72,18 @@ public:
                                                new ItemWithNode(NodeNames::RandomNode, std::vector<Item *>(), new NodeCreateCommand<RandomNode>, g),
                                                new ItemWithNode(NodeNames::ConcatenateFunction, std::vector<Item *>(), new NodeCreateCommand<ConcatenateFNode>, g)})));
         i.push_back(new Item("Audio", std::vector<Item *>(
-                                          {new ItemWithNode(NodeNames::FileReader, std::vector<Item *>(), new NodeCreateCommand<FileReaderNode>, g),
-                                           new ItemWithNode(NodeNames::Oscillator, std::vector<Item *>(), new NodeCreateCommand<OscillatorNode>, g),
-                                           new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeCreateCommand<ReverbNode>, g),
-                                           new ItemWithNode(NodeNames::AudioMathNode, std::vector<Item *>(), new NodeCreateCommand<AudioMathNode>, g),
-                                           new ItemWithNode(NodeNames::Concatenate, std::vector<Item *>(), new NodeCreateCommand<ConcatenateNode>, g),
-                                           new ItemWithNode(NodeNames::RepeatNode, std::vector<Item *>(), new NodeCreateCommand<RepeatNode>, g),
-                                           new ItemWithNode(NodeNames::TrimNode, std::vector<Item *>(), new NodeCreateCommand<TrimNode>, g),
-                                           new ItemWithNode(NodeNames::OutputNode, std::vector<Item *>(), new NodeCreateCommand<OutputNode>, g)})));
+                                          {
+                                              new ItemWithNode(NodeNames::FileReader, std::vector<Item *>(), new NodeCreateCommand<FileReaderNode>, g),
+                                              new ItemWithNode(NodeNames::Oscillator, std::vector<Item *>(), new NodeCreateCommand<OscillatorNode>, g),
+                                              new ItemWithNode(NodeNames::AudioMathNode, std::vector<Item *>(), new NodeCreateCommand<AudioMathNode>, g),
+                                              new ItemWithNode(NodeNames::Concatenate, std::vector<Item *>(), new NodeCreateCommand<ConcatenateNode>, g),
+                                              new ItemWithNode(NodeNames::RepeatNode, std::vector<Item *>(), new NodeCreateCommand<RepeatNode>, g),
+                                              new ItemWithNode(NodeNames::TrimNode, std::vector<Item *>(), new NodeCreateCommand<TrimNode>, g),
+                                          })));
+        i.push_back(new Item("Audio effects", std::vector<Item *>({new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeCreateCommand<ReverbNode>, g),
+                                                                   new ItemWithNode(NodeNames::ResamplingNode, std::vector<Item *>(), new NodeCreateCommand<ResamplingNode>, g)})));
 
+        i.push_back(new ItemWithNode(NodeNames::OutputNode, std::vector<Item *>(), new NodeCreateCommand<OutputNode>, g));
         return i;
     }
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ItemsFactory);
