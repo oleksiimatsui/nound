@@ -164,6 +164,9 @@ public:
         for (auto &[_, n] : node_components)
             delete n;
         node_components.clear();
+        for (auto &[_, n] : connection_components)
+            delete n;
+        connection_components.clear();
     }
 
     void mouseWheelMove(const juce::MouseEvent &mouseEvent, const juce::MouseWheelDetails &wheel) override

@@ -5,9 +5,7 @@
 class PositionableSource : public juce::AudioSource
 {
 public:
-    PositionableSource(){
-        // start_position_in_seconds = 0;
-    };
+    PositionableSource(){};
 
     virtual void setPosition(int pos = 0) = 0;
     virtual int getLength() = 0;
@@ -23,10 +21,6 @@ public:
     {
         return getCurrentPosition() < getLength();
     }
-
-private:
-    //  float start_position_in_seconds;
-    // int start_position;
 };
 
 class Player : public juce::AudioSource
