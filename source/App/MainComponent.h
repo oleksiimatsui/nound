@@ -277,6 +277,7 @@ public:
     {
         build();
         auto graph = g.get();
+        graph->disableDeletion();
         for (auto &[id, n] : graph->getNodes())
         {
             if (auto out = dynamic_cast<OutputNode *>(n))
@@ -296,17 +297,20 @@ public:
         player.Stop();
         playing = false;
         player.setPosition(position_slider.getValue() * player.getLength());
+        g->enableDeletion();
     }
 
     void pause()
     {
         playing = false;
         player.Stop();
+        g->enableDeletion();
     }
     void resume()
     {
         playing = true;
         player.Start();
+        g->disableDeletion();
     }
 
     void save_as()

@@ -101,6 +101,7 @@ Connection *ConnectionBuilder::build()
 Graph::Graph()
 {
     auto_increment = 0;
+    deletion_allowed = true;
 };
 std::unordered_map<int, Node *> Graph::getNodes()
 {
@@ -223,14 +224,17 @@ std::vector<int> Graph::getInputConnectionsOfNode(int node_id)
 
 void Graph::deleteConnection(int id)
 {
+    delete connections[id];
     connections.erase(id);
     for (auto &l : listeners)
     {
         l->ConnectionDeleted(id);
     };
 }
-void Graph::deleteNode(int id)
+bool Graph::deleteNode(int id)
 {
+    if (!deletion_allowed)
+        return false;
     auto connections_ids = getConnectionsOfNode(id);
     for (auto &con_id : connections_ids)
     {
@@ -244,9 +248,19 @@ void Graph::deleteNode(int id)
     {
         l->NodeDeleted(id);
     };
+    return true;
 }
 
 void Graph::registerListener(GraphListener *listener)
 {
     listeners.push_back(listener);
 }
+
+void Graph::disableDeletion()
+{
+    deletion_allowed = false;
+};
+void Graph::enableDeletion()
+{
+    deletion_allowed = true;
+};

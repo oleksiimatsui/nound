@@ -106,11 +106,13 @@ public:
     std::vector<int> getConnectionsOfNode(int id);
     std::vector<int> getInputConnectionsOfNode(int id);
     void deleteConnection(int id);
-    void deleteNode(int id);
+    bool deleteNode(int id);
     void registerListener(GraphListener *listener);
     void triggerPin(Output *pin, Value &Value);
     std::vector<Input *> getInputsOfOutput(Output *pin);
     int getOutputsOfInputSize(Input *pin);
+    void disableDeletion();
+    void enableDeletion();
 
 protected:
     std::unordered_map<int, Node *> nodes;
@@ -118,4 +120,5 @@ protected:
     int getId();
     int auto_increment;
     std::vector<GraphListener *> listeners;
+    bool deletion_allowed;
 };
