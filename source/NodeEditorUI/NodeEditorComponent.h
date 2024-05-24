@@ -20,6 +20,7 @@ public:
         auto n = new NodeComponent(juce::Point<int>(10, 10), (EditorNode *)node);
         node_components[node->id] = n;
         n->addMouseListener(mouseListener.get(), true);
+        n->setTransform(getScaleTranform());
         addAndMakeVisible(n);
     };
     void NodeDeleted(int id) override
