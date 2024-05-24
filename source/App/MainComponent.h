@@ -275,6 +275,7 @@ public:
     }
     void play()
     {
+        stop();
         build();
         auto graph = g.get();
         graph->disableDeletion();
@@ -296,7 +297,7 @@ public:
     {
         player.Stop();
         playing = false;
-        player.setPosition(position_slider.getValue() * player.getLength());
+        //        player.setPosition(position_slider.getValue() * player.getLength());
         g->enableDeletion();
     }
 
@@ -342,6 +343,7 @@ public:
     }
     void new_graph()
     {
+        stop();
         GraphInfo info;
         g.get()->recover(info, factory.get());
         node_editor.update();
@@ -470,7 +472,6 @@ public:
         };
         if (output == nullptr)
             return;
-        output->setPosition(0);
         const int size = 480;
         writer.reset(format.createWriterFor(new juce::FileOutputStream(file),
                                             SAMPLE_RATE,
