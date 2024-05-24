@@ -51,7 +51,7 @@ public:
     };
     double get(double x)
     {
-        return random.nextDouble();
+        return random.nextDouble() * 2 - 1;
     }
 
 private:
