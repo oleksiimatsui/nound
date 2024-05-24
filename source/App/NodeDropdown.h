@@ -79,11 +79,12 @@ public:
                                               new ItemWithNode(NodeNames::Concatenate, std::vector<Item *>(), new NodeCreateCommand<ConcatenateNode>, g),
                                               new ItemWithNode(NodeNames::RepeatNode, std::vector<Item *>(), new NodeCreateCommand<RepeatNode>, g),
                                               new ItemWithNode(NodeNames::TrimNode, std::vector<Item *>(), new NodeCreateCommand<TrimNode>, g),
+                                              new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeCreateCommand<ReverbNode>, g),
+                                              new ItemWithNode(NodeNames::FilterNode, std::vector<Item *>(), new NodeCreateCommand<BandPassNode>, g),
+
                                           })));
-        i.push_back(new Item("Audio effects", std::vector<Item *>(
-                                                  {new ItemWithNode(NodeNames::ReverbNode, std::vector<Item *>(), new NodeCreateCommand<ReverbNode>, g),
-                                                   new ItemWithNode(NodeNames::FilterNode, std::vector<Item *>(), new NodeCreateCommand<BandPassNode>, g),
-                                                   new ItemWithNode(NodeNames::ResamplingNode, std::vector<Item *>(), new NodeCreateCommand<ResamplingNode>, g)})));
+        // i.push_back(new Item("Audio effects", std::vector<Item *>(
+        //                                           { new ItemWithNode(NodeNames::ResamplingNode, std::vector<Item *>(), new NodeCreateCommand<ResamplingNode>, g)})));
 
         i.push_back(new ItemWithNode(NodeNames::OutputNode, std::vector<Item *>(), new NodeCreateCommand<OutputNode>, g));
         return i;
