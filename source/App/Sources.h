@@ -362,9 +362,9 @@ public:
     }
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
     {
-        if (s1 != nullptr)
-            s2->prepareToPlay(samplesPerBlockExpected, sampleRate);
         if (s2 != nullptr)
+            s2->prepareToPlay(samplesPerBlockExpected, sampleRate);
+        if (s1 != nullptr)
             s1->prepareToPlay(samplesPerBlockExpected, sampleRate);
     }
     void releaseResources() override
