@@ -23,19 +23,26 @@ public:
     }
 };
 
-class Player : public juce::AudioSource
+class Player : private juce::AudioSource
 {
 public:
-    Player()
+    Player(int _sample_rate, int _samples_per_block)
     {
         source = nullptr;
-        offset_sec = 0;
+        offset_cof = 0;
+        sample_rate = _sample_rate;
+        samples_per_block = _samples_per_block;
+        playing = false;
     };
 
     void setSource(PositionableSource *s)
     {
         source = s;
     };
+
+    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
+    {
+    }
 
     void setAudioChannels(int numInputChannels, int numOutputChannels, const juce::XmlElement *const xml = nullptr)
     {
@@ -46,12 +53,6 @@ public:
         audioSourcePlayer.setSource(this);
     }
 
-    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
-    {
-        if (source == nullptr)
-            return;
-        source->prepareToPlay(samplesPerBlockExpected, sampleRate);
-    }
     void releaseResources() override
     {
         if (source == nullptr)
@@ -74,21 +75,37 @@ public:
     {
         if (source == nullptr)
             return;
+        playing = true;
+        source->prepareToPlay(samples_per_block, sample_rate);
+        source->setPosition(offset_cof * sample_rate * source->getLengthInSeconds());
         setAudioChannels(0, 2);
     }
-    void setPosition(int p)
+    void resume()
     {
         if (source == nullptr)
             return;
-        source->setPosition(p);
+        playing = true;
+        setAudioChannels(0, 2);
+    }
+    void setPosition(float coefficient)
+    {
+        offset_cof = coefficient;
+        // if (source == nullptr)
+        //     return;
+        // source->setPosition(p);
+        // if (playing == true)
+        // {
+        //     Start();
+        // }
     }
     void Stop()
     {
-        if (source == nullptr)
-            return;
+        // if (source == nullptr)
+        //     return;
         //   source->Stop();
-        audioSourcePlayer.setSource(nullptr);
-        deviceManager.removeAudioCallback(&audioSourcePlayer);
+        playing = false;
+        // audioSourcePlayer.setSource(nullptr);
+        // deviceManager.removeAudioCallback(&audioSourcePlayer);
         deviceManager.closeAudioDevice();
     }
 
@@ -115,7 +132,10 @@ private:
     PositionableSource *source;
     juce::AudioDeviceManager deviceManager;
     juce::AudioSourcePlayer audioSourcePlayer;
-    float offset_sec;
+    float offset_cof;
+    int sample_rate;
+    int samples_per_block;
+    bool playing;
 };
 
 class ReverbSource : public PositionableSource
@@ -201,12 +221,13 @@ public:
     {
         transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
         sample_rate = sampleRate;
-        thread.startThread();
+        transportSource.start();
+
+        // thread.startThread();
     }
     void releaseResources() override
     {
-        transportSource.releaseResources();
-    }
+        }
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
         //  if (transportSource.isPlaying())
@@ -235,6 +256,13 @@ public:
     float getLengthInSeconds() override
     {
         return transportSource.getLengthInSeconds();
+    }
+    ~FileSource() override
+    {
+        transportSource.stop();
+        transportSource.releaseResources();
+        thread.stopThread(-1);
+        thread.removeAllClients();
     }
     std::string path;
     juce::AudioTransportSource transportSource;
@@ -429,7 +457,7 @@ public:
     ConcatenationSource()
     {
         length = 0;
-        offset = 0;
+        // offset = 0;
         numOfTracks = 0;
         n = 0;
     }
@@ -466,32 +494,42 @@ public:
         }
 
         // fill buffer with tracks
-        int last_buffer_size = 0;
+        int lastBufferSize = 0;
         for (int i = currentTrack; i < numOfTracks; i++)
         {
-            auto s = sources[i];
+            auto currentSource = sources[i];
             if (i != currentTrack)
             {
                 // start every new track from beginning
                 sources[i]->setPosition(0);
             }
-            juce::AudioSourceChannelInfo currentTrackCI(bufferToFill);
-            currentTrackCI.startSample = 0;
-            currentTrackCI.numSamples = juce::jmin(bufferToFill.numSamples, s->getLength() - s->getCurrentPosition());
-            s->getNextAudioBlock(currentTrackCI);
-            for (auto sample = 0; sample < currentTrackCI.numSamples; ++sample)
+            juce::AudioSourceChannelInfo currentTrackChannelInfo(bufferToFill);
+            currentTrackChannelInfo.startSample = 0;
+            currentTrackChannelInfo.numSamples = juce::jmin(
+                bufferToFill.numSamples,
+                currentSource->getLength() - currentSource->getCurrentPosition());
+
+            currentSource->getNextAudioBlock(currentTrackChannelInfo);
+            for (auto sample = 0; sample < currentTrackChannelInfo.numSamples; ++sample)
             {
                 for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
                 {
-                    auto buffer = currentTrackCI.buffer->getReadPointer(channel, bufferToFill.startSample);
-                    auto output = bufferToFill.buffer->getWritePointer(channel, bufferToFill.startSample);
-                    output[last_buffer_size + sample] = buffer[sample];
+                    auto buffer = currentTrackChannelInfo.buffer->getReadPointer(channel, 0);
+                    auto output = bufferToFill.buffer->getWritePointer(channel, 0);
+                    try
+                    {
+                        output[lastBufferSize + sample] = buffer[sample];
+                    }
+                    catch (std::exception e)
+                    {
+                        std::cout << "oups";
+                    }
                 }
                 n++;
             }
-            last_buffer_size = currentTrackCI.numSamples;
+            lastBufferSize += currentTrackChannelInfo.numSamples;
             // if current track fills the buffer, break
-            if (currentTrackCI.numSamples == bufferToFill.numSamples)
+            if (currentTrackChannelInfo.numSamples == bufferToFill.numSamples)
                 break;
         }
     }
@@ -517,7 +555,7 @@ public:
             else
             {
                 int currentTrack = i;
-                offset = n - prev_counter;
+                int offset = n - prev_counter;
                 sources[currentTrack]->setPosition(offset);
                 break;
             }
@@ -542,14 +580,17 @@ public:
         }
         return sec;
     }
-
-    std::vector<PositionableSource *> sources;
+    void setSources(const std::vector<PositionableSource *> &_sources)
+    {
+        sources = _sources;
+    }
 
 private:
     int numOfTracks;
     int n;
     int length;
-    int offset;
+    std::vector<PositionableSource *> sources;
+    //  int offset;
 };
 
 class RepeatSource : public PositionableSource

@@ -90,6 +90,7 @@ public:
 private:
     void trigger(Value &data, [[maybe_unused]] Input *pin) override
     {
+        result = nullptr;
         if (pin == inputs[InputKeys::audio_])
         {
             result = std::any_cast<PositionableSource *>(data);
@@ -104,11 +105,11 @@ class FileReaderNode : public EditorNode, public FileInput::Listener
 public:
     enum InputKeys
     {
-        predecessor
     };
     enum OutputKeys
     {
-        audio_
+        audio_,
+        length_out
     };
     FileReaderNode() : EditorNode()
     {
@@ -117,6 +118,8 @@ public:
         header = NodeNames::FileReader;
         type_id = (int)NodeTypes::FileReader;
         outputs[OutputKeys::audio_] = new Output(OutputKeys::audio_, "audio", PinType::Audio, this);
+        registerOutput(OutputKeys::length_out, "seconds", PinType::Number);
+        t = 0;
     };
 
     ~FileReaderNode()
@@ -129,9 +132,12 @@ public:
         {
             s->setFile(name);
         }
+        if (sources.size() > 0)
+            t = sources[0]->getLengthInSeconds();
     };
 
 private:
+    float t;
     std::string name;
     juce::URL *currentAudioFile;
     std::vector<std::unique_ptr<FileSource>> sources;
@@ -152,7 +158,18 @@ private:
             }
             bool r = sources[i]->setFile(name);
             if (r)
+            {
                 input->node->trigger((Value)((PositionableSource *)sources[i].get()), input);
+                if (sources.size() > 0)
+                    t = sources[0]->getLengthInSeconds();
+            }
+        }
+
+        connection_inputs = graph->getInputsOfOutput(outputs[OutputKeys::length_out]);
+        for (int i = 0; i < connection_inputs.size(); i++)
+        {
+            auto input = connection_inputs[i];
+            input->node->trigger((Value)((float)t), input);
         }
     }
 };
@@ -324,7 +341,8 @@ public:
     };
     enum OutputKeys
     {
-        audio_out
+        audio_out,
+        length_out
     };
 
     OscillatorNode() : AudioNode(0)
@@ -332,6 +350,8 @@ public:
         header = NodeNames::Oscillator;
         type_id = (int)NodeTypes::Oscillator;
         registerOutput(OutputKeys::audio_out, "audio", PinType::Audio);
+        registerOutput(OutputKeys::length_out, "seconds", PinType::Number);
+
         registerInput(InputKeys::osc_, "wave", PinType::Function);
         registerInput(InputKeys::frequency_, "frequency", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(frequency)));
         registerInput(InputKeys::phase_, "phase", PinType::Number, new NumberInput(this, 0, 5000, new FloatRef(phase)));
@@ -367,6 +387,13 @@ private:
         else
         {
             wave = nullptr;
+        }
+
+        auto connection_inputs = graph->getInputsOfOutput(outputs[OutputKeys::length_out]);
+        for (int i = 0; i < connection_inputs.size(); i++)
+        {
+            auto input = connection_inputs[i];
+            input->node->trigger((Value)((float)t), input);
         }
 
         passSources([&]() -> PositionableSource *
@@ -439,7 +466,7 @@ private:
                     passSources([&]() -> PositionableSource *
                                 {
                             auto s = new ConcatenationSource();
-                            s->sources = std::vector<PositionableSource *>({s1, s2});
+                            s->setSources(std::vector<PositionableSource *>({s1, s2}));
                             return s; });
                 }
         }

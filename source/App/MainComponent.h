@@ -8,6 +8,9 @@
 #include "NodeTypesFactory.h"
 #include <fstream>
 
+const int SAMPLE_RATE = 48000;
+const int SAMPLES_PER_BLOCK_EXPECTED = 480;
+
 class FlexWithColor : public juce::Component
 {
 public:
@@ -160,7 +163,7 @@ public:
     MainComponent() : g(new RecoverableNodeGraph()), node_editor(g.get()),
                       dropdown_panel(g.get()),
                       stretcher(false, &dropdown_panel, &node_editor, 0.1),
-                      playing(false)
+                      player(SAMPLE_RATE, SAMPLES_PER_BLOCK_EXPECTED)
     {
         setTitle("Welcome to Nound");
         setDescription("Sound node editor");
@@ -221,14 +224,14 @@ public:
         position_slider.onValueChange = [this]()
         {
             //  if(position_slider.valueChanged)
-            bool played = playing;
-            if (playing)
-            {
-                pause();
-            }
-            player.setPosition(position_slider.getValue() * player.getLength());
-            if (played)
-                resume();
+            // bool played = player.isPlaying();
+            // if (playing)
+            // {
+            //     pause();
+            // }
+            player.setPosition(position_slider.getValue());
+            //  if (played)
+            //      resume();
         };
 
         label.setText("position", juce::NotificationType::dontSendNotification);
@@ -286,21 +289,19 @@ public:
                 if (out->result == nullptr)
                     return;
                 player.setSource(out->result);
-                player.prepareToPlay(SAMPLES_PER_BLOCK_EXPECTED, SAMPLE_RATE);
-                player.setPosition(position_slider.getValue() * player.getLengthInSeconds() * SAMPLE_RATE);
-                playing = true;
+                player.setPosition(position_slider.getValue());
                 player.Start();
+                playing = true;
+                break;
             }
         };
     }
     void stop()
     {
-        player.Stop();
         playing = false;
-        //        player.setPosition(position_slider.getValue() * player.getLength());
+        player.Stop();
         g->enableDeletion();
     }
-
     void pause()
     {
         playing = false;
@@ -310,7 +311,7 @@ public:
     void resume()
     {
         playing = true;
-        player.Start();
+        player.resume();
         g->disableDeletion();
     }
 
@@ -512,8 +513,6 @@ private:
     std::unique_ptr<juce::FileChooser> fc = nullptr;
     juce::String selected_file_path;
     bool playing;
-    const int SAMPLE_RATE = 4800;
-    const int SAMPLES_PER_BLOCK_EXPECTED = 480;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };
 
