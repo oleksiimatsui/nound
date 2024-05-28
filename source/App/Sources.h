@@ -103,10 +103,16 @@ public:
         // if (source == nullptr)
         //     return;
         //   source->Stop();
+
         playing = false;
-        // audioSourcePlayer.setSource(nullptr);
-        // deviceManager.removeAudioCallback(&audioSourcePlayer);
+
+        //  if(audioSourcePlayer.isPla)
+        // if (deviceManager.getAudioCallbackLock().tryEnter())
+        //  {
+        audioSourcePlayer.setSource(nullptr);
         deviceManager.closeAudioDevice();
+        deviceManager.removeAudioCallback(&audioSourcePlayer);
+        // }
     }
 
     int getLength()
@@ -227,7 +233,7 @@ public:
     }
     void releaseResources() override
     {
-        }
+    }
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
         //  if (transportSource.isPlaying())
@@ -457,9 +463,9 @@ public:
     ConcatenationSource()
     {
         length = 0;
-        // offset = 0;
         numOfTracks = 0;
-        n = 0;
+        track_number = 0;
+        global_position = 0;
     }
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override
     {
@@ -481,56 +487,42 @@ public:
     }
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
-        int currentTrack = 0;
-        // find current track
-        for (int i = 0; i < numOfTracks; i++)
+        int remaining_samples = bufferToFill.buffer->getNumSamples();
+        while (remaining_samples > 0)
         {
-            auto s = sources[i];
-            if (s->getCurrentPosition() < s->getLength())
-            {
-                currentTrack = i;
-                break;
-            }
-        }
-
-        // fill buffer with tracks
-        int lastBufferSize = 0;
-        for (int i = currentTrack; i < numOfTracks; i++)
-        {
-            auto currentSource = sources[i];
-            if (i != currentTrack)
-            {
-                // start every new track from beginning
-                sources[i]->setPosition(0);
-            }
+            auto source = sources[track_number];
             juce::AudioSourceChannelInfo currentTrackChannelInfo(bufferToFill);
+            int track_remaining_samples = source->getLength() - source->getCurrentPosition();
+            int num_samples = juce::jmin(remaining_samples, track_remaining_samples);
             currentTrackChannelInfo.startSample = 0;
-            currentTrackChannelInfo.numSamples = juce::jmin(
-                bufferToFill.numSamples,
-                currentSource->getLength() - currentSource->getCurrentPosition());
-
-            currentSource->getNextAudioBlock(currentTrackChannelInfo);
-            for (auto sample = 0; sample < currentTrackChannelInfo.numSamples; ++sample)
+            currentTrackChannelInfo.numSamples = num_samples;
+            source->getNextAudioBlock(currentTrackChannelInfo);
+            for (int channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
             {
-                for (auto channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
-                {
-                    auto buffer = currentTrackChannelInfo.buffer->getReadPointer(channel, 0);
-                    auto output = bufferToFill.buffer->getWritePointer(channel, 0);
-                    try
-                    {
-                        output[lastBufferSize + sample] = buffer[sample];
-                    }
-                    catch (std::exception e)
-                    {
-                        std::cout << "oups";
-                    }
-                }
-                n++;
+                auto *buffer = currentTrackChannelInfo.buffer->getReadPointer(channel, 0);
+                auto *output = bufferToFill.buffer->getWritePointer(channel, 0);
+                std::copy(buffer, buffer + num_samples, output);
             }
-            lastBufferSize += currentTrackChannelInfo.numSamples;
-            // if current track fills the buffer, break
-            if (currentTrackChannelInfo.numSamples == bufferToFill.numSamples)
-                break;
+            global_position += num_samples;
+            remaining_samples -= num_samples;
+            if (track_remaining_samples == 0)
+            {
+                if (sources.size() > (track_number + 1))
+                {
+                    track_number++;
+                }
+                else if (remaining_samples > 0 || num_samples == 0)
+                {
+                    // Fill remaining samples with zeros
+                    for (int channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+                    {
+                        auto *output = bufferToFill.buffer->getWritePointer(channel, 0);
+                        std::fill(output, output + remaining_samples, 0.0f);
+                    }
+                    global_position = getLength() + 1;
+                    return;
+                }
+            }
         }
     }
 
@@ -538,33 +530,30 @@ public:
     {
         if (sources.size() == 0)
             return;
-        // numOfTracks = sources.size();
-        //     n = 0;
-        //     currentTrack = 0;
-        // return;
-        n = p;
-        int length_counter = 0;
-        int prev_counter = 0;
-        for (int i = 0; i + 1 < numOfTracks; i++)
+        int tracks_length_sum = 0;
+
+        for (int i = 0; i < sources.size(); i++)
         {
-            length_counter += sources[i]->getLength();
-            int next_counter = length_counter + sources[i + 1]->getLength();
-            if (next_counter <= n)
+            int length = sources[i]->getLength();
+            // source is current
+            if (tracks_length_sum <= p && tracks_length_sum + length >= p)
             {
+                track_number = i;
+                sources[i]->setPosition(p - tracks_length_sum);
             }
             else
             {
-                int currentTrack = i;
-                int offset = n - prev_counter;
-                sources[currentTrack]->setPosition(offset);
-                break;
+                sources[i]->setPosition(0);
             }
+            tracks_length_sum += length;
         }
+
+        global_position = p;
     }
 
     int getCurrentPosition() override
     {
-        return n;
+        return global_position;
     }
     int getLength() override
     {
@@ -587,7 +576,8 @@ public:
 
 private:
     int numOfTracks;
-    int n;
+    int track_number;
+    int global_position;
     int length;
     std::vector<PositionableSource *> sources;
     //  int offset;
