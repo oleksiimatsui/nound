@@ -233,6 +233,7 @@ public:
     }
     void releaseResources() override
     {
+        transportSource.releaseResources();
     }
     void getNextAudioBlock(const juce::AudioSourceChannelInfo &bufferToFill) override
     {
@@ -266,9 +267,8 @@ public:
     ~FileSource() override
     {
         transportSource.stop();
-        transportSource.releaseResources();
         thread.stopThread(-1);
-        thread.removeAllClients();
+        transportSource.setSource(nullptr, 0, nullptr, 0);
     }
     std::string path;
     juce::AudioTransportSource transportSource;
